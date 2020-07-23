@@ -235,9 +235,21 @@ func TestBeforeActionHandle(t *testing.T) {
 func TestDeleteHandle(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	context, _ := gin.CreateTestContext(httptest.NewRecorder())
+	config := Configuration{
+		DB:    gormDB,
+		Model: &Dog{},
+	}
+
+	configIgnoreAssociations := Configuration{
+		DB:                 gormDB,
+		Model:              &Dog{},
+		IgnoreAssociations: true,
+	}
+
 	type args struct {
-		c  *gin.Context
-		id string
+		c    *gin.Context
+		id   string
+		conf *Configuration
 	}
 	tests := []struct {
 		name     string
@@ -245,11 +257,13 @@ func TestDeleteHandle(t *testing.T) {
 		wantData []map[string]interface{}
 		wantErr  bool
 	}{
-		{"case-1", args{c: context, id: "1"}, nil, false},
-		{"case-2", args{c: context, id: "abc"}, nil, true},
+		{"case-1", args{c: context, id: "1", conf: &configIgnoreAssociations}, nil, false},
+		{"case-2", args{c: context, id: "abc", conf: &config}, nil, true},
+		{"case-3", args{c: context, id: "2", conf: &config}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.args.c.Set(keyConfig, tt.args.conf)
 			tt.args.c.Params = []gin.Param{gin.Param{
 				Key:   `id`,
 				Value: tt.args.id,
