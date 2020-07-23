@@ -1,5 +1,7 @@
 # Lazy
 
+[![Build Status](https://travis-ci.org/jiaxinwang/lazy.svg?branch=develop)](https://travis-ci.org/jiaxinwang/lazy)[![codecov](https://codecov.io/gh/jiaxinwang/lazy/branch/develop/graph/badge.svg)](https://codecov.io/gh/jiaxinwang/lazy)
+
 Lazy is a package that aims to generate rest api to operate database from a small amount of configuration or zero code.
 
 ### Test Case
