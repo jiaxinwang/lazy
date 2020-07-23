@@ -11,6 +11,7 @@ var (
 	keyResults = `_lazy_results`
 	keyCount   = `_lazy_count`
 	keyData    = `_lazy_data`
+	keyConfig  = `_lazy_configuration`
 )
 
 // MiddlewareTransParams trans params into content

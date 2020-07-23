@@ -36,7 +36,7 @@ func buildDogGetMiddlewareRouter(r *gin.Engine) *gin.Engine {
 			Results:   []interface{}{},
 			NeedCount: true,
 		}
-		c.Set("_lazy_configuration", &config)
+		c.Set(keyConfig, &config)
 		return
 	})
 	r.Use(Middleware).Use(MiddlewareTransParams).DELETE("/dog/:id", func(c *gin.Context) {
@@ -48,7 +48,7 @@ func buildDogGetMiddlewareRouter(r *gin.Engine) *gin.Engine {
 			Results:   []interface{}{},
 			NeedCount: true,
 		}
-		c.Set("_lazy_configuration", &config)
+		c.Set(keyConfig, &config)
 		return
 	})
 
@@ -65,7 +65,7 @@ func buildDogGetRouter(r *gin.Engine) *gin.Engine {
 			Results:   []interface{}{},
 			NeedCount: true,
 		}
-		c.Set("_lazy_configuration", &config)
+		c.Set(keyConfig, &config)
 		if _, err := GetHandle(c); err != nil {
 			c.Set("error_msg", err.Error())
 			return
@@ -161,7 +161,7 @@ func TestBeforeActionHandle(t *testing.T) {
 			Model:   &Dog{},
 			Results: ret,
 		}
-		c.Set("_lazy_configuration", &config)
+		c.Set(keyConfig, &config)
 		if _, err := GetHandle(c); err != nil {
 			c.Set("error_msg", err.Error())
 			return

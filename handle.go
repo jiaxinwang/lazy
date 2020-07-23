@@ -20,13 +20,19 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	if err = validator.New().Var(id, "required,number"); err != nil {
 		return nil, err
 	}
+	var config *Configuration
+	if v, ok := c.Get(keyConfig); ok {
+		config = v.(*Configuration)
+	} else {
+		return nil, errors.New("can't find lazy configuration")
+	}
 	return
 }
 
 // GetHandle executes actions and returns response
 func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	var config *Configuration
-	if v, ok := c.Get("_lazy_configuration"); ok {
+	if v, ok := c.Get(keyConfig); ok {
 		config = v.(*Configuration)
 	} else {
 		return nil, errors.New("can't find lazy configuration")
