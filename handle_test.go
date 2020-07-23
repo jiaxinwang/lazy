@@ -140,7 +140,7 @@ func TestActionHandleMiddleware(t *testing.T) {
 	// logrus.Printf("%+v", ret)
 
 	assert.Equal(t, 9, ret.Count)
-	assert.Equal(t, 2, len(ret.Items))
+	assert.Equal(t, 9, len(ret.Items))
 }
 
 func TestBeforeActionHandle(t *testing.T) {
