@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strconv"
 
+	"gorm.io/gorm/schema"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -24,9 +26,29 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	if v, ok := c.Get(keyConfig); ok {
 		config = v.(*Configuration)
 	} else {
-		return nil, errors.New("can't find lazy configuration")
+		return nil, ErrNoConfiguration
 	}
-	return
+
+	if !config.IgnoreAssociations {
+		sfs := config.DB.NewScope(config.Model).GetStructFields()
+		for _, v := range sfs {
+			if v.Relationship != nil {
+				r := v.Relationship
+				switch r.Kind {
+				case string(schema.HasOne), string(schema.Many2Many):
+					return nil, ErrUnknown
+				case string(schema.HasMany):
+					count := 0
+					config.DB.Table(v.DBName).Where(fmt.Sprintf("%s = ?", r.ForeignDBNames[0]), id).Count(&count)
+					if count > 0 {
+						return nil, ErrHasAssociations
+					}
+				}
+			}
+		}
+	}
+
+	return nil, config.DB.Where(`id = ?`, id).Delete(config.Model).Error
 }
 
 // GetHandle executes actions and returns response
@@ -35,7 +57,7 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	if v, ok := c.Get(keyConfig); ok {
 		config = v.(*Configuration)
 	} else {
-		return nil, errors.New("can't find lazy configuration")
+		return nil, ErrNoConfiguration
 	}
 
 	set := foreignOfModel((*config).Model)

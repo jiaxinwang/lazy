@@ -23,7 +23,6 @@ func MiddlewareTransParams(c *gin.Context) {
 
 // Middleware run the query
 func Middleware(c *gin.Context) {
-
 	defer func() {
 		switch c.Request.Method {
 		case http.MethodGet:
