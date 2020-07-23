@@ -232,31 +232,6 @@ func TestBeforeActionHandle(t *testing.T) {
 // 	logrus.Print(ret)
 // }
 
-func TestDeleteHandle1(t *testing.T) {
-	r := router()
-	r.Use(Middleware).Use(MiddlewareTransParams).DELETE("/dog/:id", func(c *gin.Context) {
-		var ret []interface{}
-		config := Configuration{
-			DB:      gormDB,
-			Table:   "dogs",
-			Model:   &Dog{},
-			Results: ret,
-		}
-		c.Set("_lazy_configuration", &config)
-		return
-	})
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/dog", nil)
-
-	r.ServeHTTP(w, req)
-	response := Response{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, 200, w.Code)
-	assert.NoError(t, err)
-
-}
-
 func TestDeleteHandle(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	context, _ := gin.CreateTestContext(httptest.NewRecorder())
