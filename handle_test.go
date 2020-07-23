@@ -99,7 +99,7 @@ func TestActionHandlePage(t *testing.T) {
 	MapStruct(response.Data.(map[string]interface{}), &ret)
 	// logrus.Printf("%+v", ret)
 
-	assert.Equal(t, 2, ret.Count)
+	assert.Equal(t, 9, ret.Count)
 	assert.Equal(t, 1, len(ret.Items))
 
 }
