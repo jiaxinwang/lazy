@@ -40,6 +40,22 @@ Lazy is a package that aims to generate rest api to operate database from a smal
 	}
 ```
 
+### Delete Method
+
+delete records matching the primary key passed by url params.
+**IgnoreAssociations** == true, and when the record has associated data (has-one, has-many, many2many), it fails.
+
+```golang
+    config := Configuration{
+		DB:              	gormDB,
+		Struct:  		 	&Dog{},
+		IgnoreAssociations: true,
+	}
+```
+
+```
+```
+
 ### TODO
 
 - [x] automated database operation 🚀🚀🚀🚀🚀

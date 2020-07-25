@@ -1,12 +1,12 @@
 package lazy
 
 import (
-	"reflect"
 	"testing"
 
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestBeforeParams(t *testing.T) {
@@ -160,9 +160,19 @@ func Test_mergeValues(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotRet := mergeValues(tt.args.a, tt.args.b); !reflect.DeepEqual(gotRet, tt.wantRet) {
-				t.Errorf("mergeValues() = %v, want %v\ndiff=%v", gotRet, tt.wantRet, cmp.Diff(gotRet, tt.wantRet))
+			gotRet := mergeValues(tt.args.a, tt.args.b)
+			for k, v := range gotRet {
+				if vv, ok := tt.wantRet[k]; ok {
+					if !cmp.Equal(v, vv, cmpopts.SortSlices(func(i, j string) bool { return i < j })) {
+						t.Errorf("mergeValues() = %v, want %v\ndiff=%v", gotRet, tt.wantRet, cmp.Diff(gotRet, tt.wantRet))
+					}
+				} else {
+					t.Errorf("mergeValues() = %v, want %v\ndiff=%v", gotRet, tt.wantRet, cmp.Diff(gotRet, tt.wantRet))
+				}
 			}
+			// if gotRet := mergeValues(tt.args.a, tt.args.b); !cmp.Equal(gotRet, tt.wantRet, cmpopts.SortMaps(func(i, j int) bool { return i < j })) {
+			// 	t.Errorf("mergeValues() = %v, want %v\ndiff=%v", gotRet, tt.wantRet, cmp.Diff(gotRet, tt.wantRet))
+			// }
 		})
 	}
 }
