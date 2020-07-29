@@ -16,7 +16,7 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-// DeleteHandle executes delete action.
+// DeleteHandle executes delete.
 func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	id := c.Param("id")
 	if err = validator.New().Var(id, "required,number"); err != nil {
@@ -49,6 +49,38 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	}
 
 	return nil, config.DB.Where(`id = ?`, id).Delete(config.Model).Error
+}
+
+// PostHandle executes post.
+func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
+	var config *Configuration
+	if v, ok := c.Get(keyConfig); ok {
+		config = v.(*Configuration)
+	} else {
+		return nil, ErrNoConfiguration
+	}
+
+	if err = c.ShouldBindJSON(config.Model); err != nil {
+		return nil, err
+	}
+	if err = config.DB.Create(config.Model).Error; err != nil {
+		return nil, err
+	}
+	return
+}
+
+// PutHandle executes put.
+func PutHandle(c *gin.Context) (data []map[string]interface{}, err error) {
+	var config *Configuration
+	if v, ok := c.Get(keyConfig); ok {
+		config = v.(*Configuration)
+	} else {
+		return nil, ErrNoConfiguration
+	}
+	if err = c.ShouldBindJSON(config.Model); err != nil {
+		return nil, err
+	}
+	return
 }
 
 // GetHandle executes actions and returns response

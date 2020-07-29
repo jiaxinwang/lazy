@@ -170,9 +170,6 @@ func Test_mergeValues(t *testing.T) {
 					t.Errorf("mergeValues() = %v, want %v\ndiff=%v", gotRet, tt.wantRet, cmp.Diff(gotRet, tt.wantRet))
 				}
 			}
-			// if gotRet := mergeValues(tt.args.a, tt.args.b); !cmp.Equal(gotRet, tt.wantRet, cmpopts.SortMaps(func(i, j int) bool { return i < j })) {
-			// 	t.Errorf("mergeValues() = %v, want %v\ndiff=%v", gotRet, tt.wantRet, cmp.Diff(gotRet, tt.wantRet))
-			// }
 		})
 	}
 }
