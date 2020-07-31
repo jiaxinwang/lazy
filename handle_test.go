@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	gm "github.com/jiaxinwang/common/gin-middleware"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/go-cmp/cmp"
@@ -26,31 +25,43 @@ func router() *gin.Engine {
 	return r
 }
 
-func buildDogGetMiddlewareRouter(r *gin.Engine) *gin.Engine {
-	r.Use(Middleware).Use(MiddlewareTransParams).GET("/dogs", func(c *gin.Context) {
-		config := Configuration{
-			DB:        gormDB,
-			Table:     "dogs",
-			Columms:   "*",
-			Model:     &Dog{},
-			Results:   []interface{}{},
-			NeedCount: true,
-		}
-		c.Set(keyConfig, &config)
-		return
-	})
-	r.Use(Middleware).Use(MiddlewareTransParams).DELETE("/dog/:id", func(c *gin.Context) {
-		config := Configuration{
-			DB:        gormDB,
-			Table:     "dogs",
-			Columms:   "*",
-			Model:     &Dog{},
-			Results:   []interface{}{},
-			NeedCount: true,
-		}
-		c.Set(keyConfig, &config)
-		return
-	})
+func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
+	g := r.Use(MiddlewareTransParams).Use(Middleware)
+	{
+		g.GET("/dogs", func(c *gin.Context) {
+			config := Configuration{
+				DB:        gormDB,
+				Table:     "dogs",
+				Columms:   "*",
+				Model:     &Dog{},
+				Results:   []interface{}{},
+				NeedCount: true,
+			}
+			c.Set(keyConfig, &config)
+			return
+		})
+		g.DELETE("/dogs/:id", func(c *gin.Context) {
+			config := Configuration{
+				DB:        gormDB,
+				Table:     "dogs",
+				Columms:   "*",
+				Model:     &Dog{},
+				Results:   []interface{}{},
+				NeedCount: true,
+			}
+			c.Set(keyConfig, &config)
+			return
+		})
+		g.POST("/dogs", func(c *gin.Context) {
+			config := Configuration{
+				DB:     gormDB,
+				Model:  &Dog{},
+				Action: []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultPostAction}},
+			}
+			c.Set(keyConfig, &config)
+			return
+		})
+	}
 
 	return r
 }
@@ -122,7 +133,7 @@ func TestActionHandle(t *testing.T) {
 }
 
 func TestActionHandleMiddleware(t *testing.T) {
-	r := buildDogGetMiddlewareRouter(router())
+	r := buildDogMiddlewareRouter(router())
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/dogs", nil)
 	q := req.URL.Query()
@@ -143,51 +154,51 @@ func TestActionHandleMiddleware(t *testing.T) {
 	assert.Equal(t, 9, len(ret.Items))
 }
 
-func TestBeforeActionHandle(t *testing.T) {
-	r := router()
-	r.Use(MiddlewareTransParams).GET("/dogs", func(c *gin.Context) {
-		var ret []interface{}
-		config := Configuration{
-			DB: gormDB,
-			BeforeAction: &ActionConfiguration{
-				Table:     "profiles",
-				Model:     &Profile{},
-				ResultMap: map[string]string{"dog_id": "id"},
-				Action:    DefaultBeforeAction,
-				Params:    []string{`before_dog_id`},
-			},
-			Table:   "dogs",
-			Columms: "*",
-			Model:   &Dog{},
-			Results: ret,
-		}
-		c.Set(keyConfig, &config)
-		if _, err := GetHandle(c); err != nil {
-			c.Set("error_msg", err.Error())
-			return
-		}
-		c.Set("ret", map[string]interface{}{"data": map[string]interface{}{"count": len(config.Results), "items": config.Results}})
-		return
-	})
+// func TestBeforeActionHandle(t *testing.T) {
+// 	r := router()
+// 	r.Use(MiddlewareTransParams).GET("/dogs", func(c *gin.Context) {
+// 		var ret []interface{}
+// 		config := Configuration{
+// 			DB: gormDB,
+// 			BeforeAction: &ActionConfiguration{
+// 				Table:     "profiles",
+// 				Model:     &Profile{},
+// 				ResultMap: map[string]string{"dog_id": "id"},
+// 				Action:    DefaultBeforeAction,
+// 				Params:    []string{`before_dog_id`},
+// 			},
+// 			Table:   "dogs",
+// 			Columms: "*",
+// 			Model:   &Dog{},
+// 			Results: ret,
+// 		}
+// 		c.Set(keyConfig, &config)
+// 		if _, err := GetHandle(c); err != nil {
+// 			c.Set("error_msg", err.Error())
+// 			return
+// 		}
+// 		c.Set("ret", map[string]interface{}{"data": map[string]interface{}{"count": len(config.Results), "items": config.Results}})
+// 		return
+// 	})
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/dogs", nil)
-	q := req.URL.Query()
-	q.Add("before_dog_id", `1`)
-	q.Add("before_dog_id", `2`)
-	req.URL.RawQuery = q.Encode()
+// 	w := httptest.NewRecorder()
+// 	req, _ := http.NewRequest("GET", "/dogs", nil)
+// 	q := req.URL.Query()
+// 	q.Add("before_dog_id", `1`)
+// 	q.Add("before_dog_id", `2`)
+// 	req.URL.RawQuery = q.Encode()
 
-	r.ServeHTTP(w, req)
-	response := Response{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, 200, w.Code)
-	assert.NoError(t, err)
+// 	r.ServeHTTP(w, req)
+// 	response := Response{}
+// 	err := json.Unmarshal(w.Body.Bytes(), &response)
+// 	assert.Equal(t, 200, w.Code)
+// 	assert.NoError(t, err)
 
-	var ret Ret
-	MapStruct(response.Data.(map[string]interface{}), &ret)
-	logrus.Printf("%+v", ret)
+// 	var ret Ret
+// 	MapStruct(response.Data.(map[string]interface{}), &ret)
+// 	logrus.Printf("%+v", ret)
 
-}
+// }
 
 // func TestAfterActionHandle(t *testing.T) {
 // 	r := router()
@@ -264,7 +275,7 @@ func TestDeleteHandle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.c.Set(keyConfig, tt.args.conf)
-			tt.args.c.Params = []gin.Param{gin.Param{
+			tt.args.c.Params = []gin.Param{{
 				Key:   `id`,
 				Value: tt.args.id,
 			}}

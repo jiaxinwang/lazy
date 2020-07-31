@@ -42,12 +42,22 @@ func Middleware(c *gin.Context) {
 				c.Set("ret", map[string]interface{}{"data": data})
 			}
 		case http.MethodPost:
-			if _, err := PostHandle(c); err != nil {
-				c.Set("error_msg", err.Error())
+			var config *Configuration
+			if v, ok := c.Get(keyConfig); ok {
+				config = v.(*Configuration)
+			} else {
+				c.Set("error_msg", ErrNoConfiguration)
 				return
 			}
+			for _, v := range config.Action {
+				if _, err := v.Action(c, &v, nil); err != nil {
+					c.Set("error_msg", err.Error())
+				}
+			}
+
 			if data, exist := c.Get(keyResults); exist {
 				c.Set("ret", map[string]interface{}{"data": data})
+				return
 			}
 		}
 		return

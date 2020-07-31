@@ -16,9 +16,9 @@ type Configuration struct {
 	AfterAction        *ActionConfiguration
 	IgnoreAssociations bool
 	NeedCount          bool
-	Action             []*ActionConfiguration
-	Before             []*ActionConfiguration
-	After              []*ActionConfiguration
+	Action             []ActionConfiguration
+	Before             []ActionConfiguration
+	After              []ActionConfiguration
 }
 
 // ActionConfiguration configs action, before-action, after-action values and actions
@@ -32,5 +32,5 @@ type ActionConfiguration struct {
 	ResultMap          map[string]string
 	IgnoreAssociations bool
 	NeedCount          bool
-	Action             func(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (result interface{}, reduce map[string][]string, err error)
+	Action             func(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error)
 }

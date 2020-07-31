@@ -14,15 +14,8 @@ import (
 	"github.com/adam-hanna/arrayOperations"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/mitchellh/mapstructure"
 )
-
-var json jsoniter.API
-
-func init() {
-	json = jsoniter.ConfigCompatibleWithStandardLibrary
-}
 
 // LazyTagSlice ...
 func LazyTagSlice(v interface{}, m map[string][]string) map[string][]interface{} {

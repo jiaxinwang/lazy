@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/assert"
 )
 
 func genContent() *gin.Context {
@@ -17,7 +18,60 @@ func genContent() *gin.Context {
 	return context
 }
 
-func TestPostHandle(t *testing.T) {
+func TestDefaultPostAction(t *testing.T) {
+	r := buildDogMiddlewareRouter(router())
+	jsonParams := []string{
+		`{"name":"test-put-dog-1"}`,
+		`{"name":"test-put-dog-2","foods":[{"id":1},{"id":2}]}`,
+	}
+
+	for _, jsonParam := range jsonParams {
+		w := httptest.NewRecorder()
+
+		contentBuffer := bytes.NewBuffer([]byte(jsonParam))
+		req, _ := http.NewRequest("POST", "/dogs", contentBuffer)
+
+		r.ServeHTTP(w, req)
+		response := Response{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.Equal(t, 200, w.Code)
+		assert.NoError(t, err)
+
+		dog := Dog{}
+		json.Unmarshal([]byte(jsonParam), &dog)
+		if dog.Foods == nil {
+			dog.Foods = []Food{}
+		}
+		dbDog := Dog{}
+		if err = gormDB.Where("name = ?", dog.Name).Find(&dbDog).Error; err != nil {
+			t.Errorf("db find dog = %v", err)
+			return
+		}
+		gormDB.Model(&dbDog).Related(&dbDog.Foods, "Foods")
+
+		if !cmp.Equal(
+			dog,
+			dbDog,
+			cmpopts.IgnoreFields(Dog{}, "ID", "CreatedAt", "UpdatedAt"),
+			cmpopts.IgnoreFields(Food{}, "ID", "CreatedAt", "UpdatedAt", "Brand"),
+		) {
+			t.Errorf(
+				"dog() = %v, want %v\ndiff=%v",
+				dog, dbDog,
+				cmp.Diff(
+					dog,
+					dbDog,
+					cmpopts.IgnoreFields(Dog{}, "ID", "CreatedAt", "UpdatedAt"),
+					cmpopts.IgnoreFields(Food{}, "ID", "CreatedAt", "UpdatedAt", "Brand"),
+				),
+			)
+		}
+
+	}
+
+}
+
+func TestPostAction(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	type args struct {

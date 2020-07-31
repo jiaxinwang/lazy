@@ -66,6 +66,7 @@ func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payloa
 	data = make([]map[string]interface{}, 1)
 	data[0] = make(map[string]interface{})
 	data[0]["ret"] = clone(config.Model)
+	c.Set(keyResults, data)
 	return data, err
 }
 
@@ -110,12 +111,13 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 
 	set := foreignOfModel((*config).Model)
 
-	if config.BeforeAction != nil {
-		_, _, errBefore := config.BeforeAction.Action(c, config.DB, *config, nil)
-		if errBefore != nil {
-			return nil, errBefore
-		}
-	}
+	// FIXME:
+	// if config.BeforeAction != nil {
+	// 	_, _, errBefore := config.BeforeAction.Action(c, config.DB, *config, nil)
+	// 	if errBefore != nil {
+	// 		return nil, errBefore
+	// 	}
+	// }
 
 	paramsItr, ok := c.Get(keyParams)
 	if !ok {
