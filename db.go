@@ -90,6 +90,9 @@ func createModel(db *gorm.DB, model interface{}) (err error) {
 	}
 
 	for _, v := range m2m {
+		if len(v.Values) == 0 {
+			continue
+		}
 		if f, ok := newStruct(v.TypeName); ok {
 			m := make([]interface{}, 0)
 			eqs := make(map[string][]interface{})

@@ -63,24 +63,7 @@ func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 		return nil, err
 	}
 
-	logrus.Printf("@@@ %+v", config.Model)
-	if err = createModel(config.DB, config.Model); err != nil {
-		return nil, err
-	}
-	// if err = config.DB.Create(config.Model).Error; err != nil {
-	// 	return nil, err
-	// }
-	// logrus.Printf("@@@ %+v", config.Model)
-
-	// m2m, err := disassemble(config.DB, config.Model)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// if err = config.DB.Create(config.Model).Error; err != nil {
-	// 	return nil, err
-	// }
-	return
+	return nil, createModel(config.DB, config.Model)
 }
 
 // PutHandle executes put.
