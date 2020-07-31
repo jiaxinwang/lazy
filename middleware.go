@@ -41,6 +41,14 @@ func Middleware(c *gin.Context) {
 			if data, exist := c.Get(keyResults); exist {
 				c.Set("ret", map[string]interface{}{"data": data})
 			}
+		case http.MethodPost:
+			if _, err := PostHandle(c); err != nil {
+				c.Set("error_msg", err.Error())
+				return
+			}
+			if data, exist := c.Get(keyResults); exist {
+				c.Set("ret", map[string]interface{}{"data": data})
+			}
 		}
 		return
 	}()
