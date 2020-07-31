@@ -1,9 +1,68 @@
 package lazy
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 )
+
+func clone(inter interface{}) interface{} {
+	newInter := reflect.New(reflect.TypeOf(inter).Elem())
+
+	val := reflect.ValueOf(inter).Elem()
+	taggetVal := newInter.Elem()
+	for i := 0; i < val.NumField(); i++ {
+		field := taggetVal.Field(i)
+		field.Set(val.Field(i))
+	}
+	return newInter.Interface()
+}
+
+func deepCopy(src, dst interface{}) error {
+	byt, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(byt, dst)
+}
+
+func isNil(i interface{}) bool {
+	if i == nil {
+		return true
+	}
+	switch reflect.TypeOf(i).Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+		return reflect.ValueOf(i).IsNil()
+	}
+	return false
+}
+
+func setField(src interface{}, name string, v interface{}) (err error) {
+	ps := reflect.ValueOf(src)
+	s := ps.Elem()
+	if s.Kind() == reflect.Struct {
+		f := s.FieldByName(name)
+		if f.IsValid() {
+			if f.CanSet() {
+				if isNil(v) {
+					f.Set(reflect.Zero(f.Type()))
+				} else {
+					f.Set(reflect.ValueOf(v))
+				}
+			} else {
+				err = errors.New("can't set")
+				return
+			}
+		} else {
+			err = errors.New("not valid")
+			return
+		}
+	} else {
+		err = errors.New("wrong kind")
+		return
+	}
+	return
+}
 
 func valueOfTag(inter interface{}, tagName string) interface{} {
 	model := reflect.ValueOf(inter)

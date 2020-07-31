@@ -94,6 +94,8 @@ func setup() {
 
 	gormDB.AutoMigrate(&Dog{}, &Profile{}, &Breed{}, &Toy{}, &Food{}, &Owner{})
 
+	register(&Dog{}, &Profile{}, &Breed{}, &Toy{}, &Food{}, &Owner{})
+
 	ownerNames := []string{
 		`Bowie`,
 		`Lennon`,

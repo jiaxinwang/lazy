@@ -3,7 +3,6 @@ package lazy
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 
 	"gorm.io/gorm/schema"
@@ -174,24 +173,4 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	c.Set(keyData, config.Results)
 	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
 	return
-}
-
-func clone(inter interface{}) interface{} {
-	newInter := reflect.New(reflect.TypeOf(inter).Elem())
-
-	val := reflect.ValueOf(inter).Elem()
-	taggetVal := newInter.Elem()
-	for i := 0; i < val.NumField(); i++ {
-		field := taggetVal.Field(i)
-		field.Set(val.Field(i))
-	}
-	return newInter.Interface()
-}
-
-func deepCopy(src, dst interface{}) error {
-	byt, err := json.Marshal(src)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(byt, dst)
 }
