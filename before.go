@@ -17,21 +17,21 @@ func DefaultBeforeAction(c *gin.Context, gormDB *gorm.DB, config Configuration, 
 
 	// eq, gt, lt, gte, lte, r := BeforeLazy(c.Request.URL.Query())
 	eq, gt, lt, gte, lte, r := BeforeLazy(params)
-	eqm := LazyTagSlice(config.Before.Model, eq)
-	gtm := LazyTag(config.Before.Model, gt)
-	ltm := LazyTag(config.Before.Model, lt)
-	gtem := LazyTag(config.Before.Model, gte)
-	ltem := LazyTag(config.Before.Model, lte)
+	eqm := LazyTagSlice(config.BeforeAction.Model, eq)
+	gtm := LazyTag(config.BeforeAction.Model, gt)
+	ltm := LazyTag(config.BeforeAction.Model, lt)
+	gtem := LazyTag(config.BeforeAction.Model, gte)
+	ltem := LazyTag(config.BeforeAction.Model, lte)
 	gormDB.LogMode(true)
 
 	cols := make([]string, 0)
 
-	for k := range config.Before.ResultMap {
+	for k := range config.BeforeAction.ResultMap {
 		cols = append(cols, k)
 	}
 	colStr := strings.Join(cols, `,`)
 
-	sel := db.SelectBuilder(sq.Select(colStr).From(config.Before.Table), eqm, gtm, ltm, gtem, ltem)
+	sel := db.SelectBuilder(sq.Select(colStr).From(config.BeforeAction.Table), eqm, gtm, ltm, gtem, ltem)
 	result, err = db.Query(gormDB, sel)
 	conv := result.([]map[string]interface{})
 	logrus.Printf("%+v", conv)

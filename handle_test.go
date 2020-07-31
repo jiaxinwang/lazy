@@ -149,7 +149,7 @@ func TestBeforeActionHandle(t *testing.T) {
 		var ret []interface{}
 		config := Configuration{
 			DB: gormDB,
-			Before: &ActionConfiguration{
+			BeforeAction: &ActionConfiguration{
 				Table:     "profiles",
 				Model:     &Profile{},
 				ResultMap: map[string]string{"dog_id": "id"},

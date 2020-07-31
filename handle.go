@@ -50,6 +50,25 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	return nil, config.DB.Where(`id = ?`, id).Delete(config.Model).Error
 }
 
+// DefaultPostAction execute default post.
+func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+	var config *Configuration
+	if v, ok := c.Get(keyConfig); ok {
+		config = v.(*Configuration)
+	} else {
+		return nil, ErrNoConfiguration
+	}
+
+	if err = c.ShouldBindJSON(config.Model); err != nil {
+		return nil, err
+	}
+	err = createModel(config.DB, config.Model)
+	data = make([]map[string]interface{}, 1)
+	data[0] = make(map[string]interface{})
+	data[0]["ret"] = clone(config.Model)
+	return data, err
+}
+
 // PostHandle executes post.
 func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	var config *Configuration
@@ -91,8 +110,8 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 
 	set := foreignOfModel((*config).Model)
 
-	if config.Before != nil {
-		_, _, errBefore := config.Before.Action(c, config.DB, *config, nil)
+	if config.BeforeAction != nil {
+		_, _, errBefore := config.BeforeAction.Action(c, config.DB, *config, nil)
 		if errBefore != nil {
 			return nil, errBefore
 		}

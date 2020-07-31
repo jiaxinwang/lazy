@@ -12,19 +12,25 @@ type Configuration struct {
 	Columms            string
 	Model              interface{}
 	Results            []interface{}
-	Before             *ActionConfiguration
-	After              *ActionConfiguration
+	BeforeAction       *ActionConfiguration
+	AfterAction        *ActionConfiguration
 	IgnoreAssociations bool
 	NeedCount          bool
+	Action             []*ActionConfiguration
+	Before             []*ActionConfiguration
+	After              []*ActionConfiguration
 }
 
 // ActionConfiguration configs action, before-action, after-action values and actions
 type ActionConfiguration struct {
-	Table     string
-	Model     interface{}
-	Action    func(c *gin.Context, gormDB *gorm.DB, config Configuration, payload interface{}) (result interface{}, reduce map[string][]string, err error)
-	Params    []string
-	ResultMap map[string]string
-	// Target    []interface{}
-	// Columms   string
+	DB                 *gorm.DB
+	Table              string
+	Columms            string
+	Model              interface{}
+	Results            []interface{}
+	Params             []string
+	ResultMap          map[string]string
+	IgnoreAssociations bool
+	NeedCount          bool
+	Action             func(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (result interface{}, reduce map[string][]string, err error)
 }
