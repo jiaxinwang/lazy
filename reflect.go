@@ -4,6 +4,8 @@ import (
 	"errors"
 	"reflect"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 func clone(inter interface{}) interface{} {
@@ -62,6 +64,14 @@ func setField(src interface{}, name string, v interface{}) (err error) {
 		return
 	}
 	return
+}
+
+func valueOfJSONKey(inter interface{}, key string) jsoniter.Any {
+	if b, err := json.Marshal(inter); err == nil {
+		return json.Get(b, key)
+	}
+
+	return nil
 }
 
 func valueOfTag(inter interface{}, tagName string) interface{} {

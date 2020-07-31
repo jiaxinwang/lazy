@@ -40,7 +40,7 @@ type Dog struct {
 	Name      string    `json:"name" lazy:"name" mapstructure:"name"`
 	OwnerID   uint      `json:"owner_id" lazy:"owner_id" mapstructure:"owner_id"`
 	Toys      []Toy     `json:"toys" lazy:"toys" mapstructure:"toys"`
-	Foods     []Food    `json:"foods" lazy:"foods" mapstructure:"dog_foods" gorm:"many2many:dog_foods;"`
+	Foods     []Food    `json:"foods" lazy:"foods" mapstructure:"dog_foods" gorm:"many2many:dog_foods"`
 	BreedID   uint      `json:"bread_id" lazy:"breed_id" mapstructure:"breed_id"`
 }
 
@@ -72,6 +72,7 @@ type Breed struct {
 var gormDB *gorm.DB
 
 func TestMain(m *testing.M) {
+	logrus.SetLevel(logrus.DebugLevel)
 	setup()
 	defer os.Exit(m.Run())
 	defer func() {

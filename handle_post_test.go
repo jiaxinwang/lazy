@@ -15,11 +15,6 @@ func TestPostHandle(t *testing.T) {
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
 
-	// config := Configuration{
-	// 	DB:    gormDB,
-	// 	Model: &Dog{},
-	// }
-
 	configIgnoreAssociations := Configuration{
 		DB:                 gormDB,
 		Model:              &Dog{},
@@ -37,7 +32,8 @@ func TestPostHandle(t *testing.T) {
 		wantData []map[string]interface{}
 		wantErr  bool
 	}{
-		{"case-simple", args{c: context, json: `{"name":"test-dog"}`, conf: &configIgnoreAssociations}, nil, false},
+		// {"case-simple", args{c: context, json: `{"name":"test-put-dog-1"}`, conf: &configIgnoreAssociations}, nil, false},
+		{"case-simple", args{c: context, json: `{"name":"test-put-dog-2","foods":[{"id":1},{"id":2}]}`, conf: &configIgnoreAssociations}, nil, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -50,9 +46,24 @@ func TestPostHandle(t *testing.T) {
 				t.Errorf("PostHandle() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !cmp.Equal(gotData, tt.wantData) {
 				t.Errorf("PostHandle() = %v, want %v\ndiff=%v", gotData, tt.wantData, cmp.Diff(gotData, tt.wantData))
 			}
+			dog := &Dog{}
+			json.Unmarshal([]byte(tt.args.json), dog)
+			dbDog := &Dog{}
+			if err = gormDB.Where("name = ?", dog.Name).Find(&dbDog).Error; err != nil {
+				t.Errorf("db find dog = %v", err)
+				return
+			}
+
+			gormDB.Model(dbDog).Related(dbDog.Foods)
+
+			if !cmp.Equal(dog.Name, dbDog.Name) {
+				t.Errorf("dog() = %v, want %v\ndiff=%v", dog.Name, dbDog.Name, cmp.Diff(dog.Name, dbDog.Name))
+			}
+
 		})
 	}
 }
