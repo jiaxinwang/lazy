@@ -2,7 +2,10 @@ package lazy
 
 import (
 	"errors"
+	"fmt"
 	"strings"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 var (
@@ -53,4 +56,21 @@ func (errs Errors) Error() string {
 		errors = append(errors, e.Error())
 	}
 	return strings.Join(errors, "; ")
+}
+
+// WarpErr ...
+func WarpErr(desc string, err error) error {
+	return fmt.Errorf("%v --> %w", desc, err)
+}
+
+// ErrorCode ...
+func ErrorCode(err error) (code uint, msg string) {
+	var mySQLError *mysql.MySQLError
+	switch {
+	case errors.As(err, &mySQLError):
+		if val, ok := err.(*mysql.MySQLError); ok {
+			return uint(val.Number), val.Message
+		}
+	}
+	return 0, "unknown error"
 }

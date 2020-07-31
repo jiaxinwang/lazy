@@ -3,7 +3,6 @@ package lazy
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 
 	"gorm.io/gorm/schema"
@@ -16,7 +15,7 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-// DeleteHandle executes delete action.
+// DeleteHandle executes delete.
 func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	id := c.Param("id")
 	if err = validator.New().Var(id, "required,number"); err != nil {
@@ -49,6 +48,36 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	}
 
 	return nil, config.DB.Where(`id = ?`, id).Delete(config.Model).Error
+}
+
+// PostHandle executes post.
+func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
+	var config *Configuration
+	if v, ok := c.Get(keyConfig); ok {
+		config = v.(*Configuration)
+	} else {
+		return nil, ErrNoConfiguration
+	}
+
+	if err = c.ShouldBindJSON(config.Model); err != nil {
+		return nil, err
+	}
+
+	return nil, createModel(config.DB, config.Model)
+}
+
+// PutHandle executes put.
+func PutHandle(c *gin.Context) (data []map[string]interface{}, err error) {
+	var config *Configuration
+	if v, ok := c.Get(keyConfig); ok {
+		config = v.(*Configuration)
+	} else {
+		return nil, ErrNoConfiguration
+	}
+	if err = c.ShouldBindJSON(config.Model); err != nil {
+		return nil, err
+	}
+	return
 }
 
 // GetHandle executes actions and returns response
@@ -142,24 +171,4 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	c.Set(keyData, config.Results)
 	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
 	return
-}
-
-func clone(inter interface{}) interface{} {
-	newInter := reflect.New(reflect.TypeOf(inter).Elem())
-
-	val := reflect.ValueOf(inter).Elem()
-	taggetVal := newInter.Elem()
-	for i := 0; i < val.NumField(); i++ {
-		field := taggetVal.Field(i)
-		field.Set(val.Field(i))
-	}
-	return newInter.Interface()
-}
-
-func deepCopy(src, dst interface{}) error {
-	byt, err := json.Marshal(src)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(byt, dst)
 }
