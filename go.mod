@@ -13,7 +13,6 @@ require (
 	github.com/jinzhu/gorm v1.9.15
 	github.com/json-iterator/go v1.1.10
 	github.com/mitchellh/mapstructure v1.3.3
-	github.com/nicksnyder/go-i18n/v2 v2.0.3 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.6.1
 	github.com/tidwall/sjson v1.1.1
