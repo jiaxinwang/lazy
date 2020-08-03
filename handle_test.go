@@ -135,7 +135,7 @@ func TestActionHandlePage(t *testing.T) {
 // 	assert.NoError(t, err)
 // }
 
-func TestActionHandleMiddleware(t *testing.T) {
+func TestDefaultGetActionMiddleware(t *testing.T) {
 	initTeseDB()
 	r := buildDogMiddlewareRouter(router())
 	w := httptest.NewRecorder()
