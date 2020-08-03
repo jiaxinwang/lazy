@@ -11,6 +11,7 @@ import (
 )
 
 func Test_createModel(t *testing.T) {
+	initTeseDB()
 	var dog Dog
 	assert.NoError(t, createModel(gormDB, &Owner{Name: "has-one-owner", Dog: Dog{Name: "has-one-dog"}}))
 

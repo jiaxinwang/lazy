@@ -90,6 +90,7 @@ func buildDogGetRouter(r *gin.Engine) *gin.Engine {
 }
 
 func TestActionHandlePage(t *testing.T) {
+	initTeseDB()
 	r := buildDogGetRouter(router())
 
 	w := httptest.NewRecorder()
@@ -133,6 +134,7 @@ func TestActionHandle(t *testing.T) {
 }
 
 func TestActionHandleMiddleware(t *testing.T) {
+	initTeseDB()
 	r := buildDogMiddlewareRouter(router())
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/dogs", nil)

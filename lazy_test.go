@@ -78,16 +78,11 @@ func TestMain(m *testing.M) {
 	defer func() {
 		teardown()
 	}()
-
 }
 
-func setup() {
-	logrus.SetReportCaller(true)
-	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
+func initTeseDB() {
 	var err error
-
 	os.Remove("./test.db")
-
 	gormDB, err = gorm.Open("sqlite3", "./test.db")
 	if err != nil {
 		panic(err)
@@ -173,10 +168,14 @@ func setup() {
 	for k := range ownerNames {
 		gormDB.Create(&Profile{Age: uint(1 + k%3), DogID: uint(k)})
 	}
+}
 
+func setup() {
+	logrus.SetReportCaller(true)
+	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
 }
 
 func teardown() {
-	// os.Remove("./test.db")
 	gormDB.Close()
+	os.Remove("./test.db")
 }
