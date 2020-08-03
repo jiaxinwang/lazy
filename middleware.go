@@ -24,12 +24,26 @@ func MiddlewareTransParams(c *gin.Context) {
 // Middleware run the query
 func Middleware(c *gin.Context) {
 	defer func() {
+		var config *Configuration
+		if v, ok := c.Get(keyConfig); ok {
+			config = v.(*Configuration)
+		} else {
+			c.Set("error_msg", ErrNoConfiguration)
+			return
+		}
+
 		switch c.Request.Method {
 		case http.MethodGet:
-			if _, err := GetHandle(c); err != nil {
-				c.Set("error_msg", err.Error())
-				return
+			// if _, err := GetHandle(c); err != nil {
+			// 	c.Set("error_msg", err.Error())
+			// 	return
+			// }
+			for _, v := range config.Action {
+				if _, err := v.Action(c, &v, nil); err != nil {
+					c.Set("error_msg", err.Error())
+				}
 			}
+
 			if data, exist := c.Get(keyResults); exist {
 				c.Set("ret", map[string]interface{}{"data": data})
 			}
@@ -42,13 +56,6 @@ func Middleware(c *gin.Context) {
 				c.Set("ret", map[string]interface{}{"data": data})
 			}
 		case http.MethodPost:
-			var config *Configuration
-			if v, ok := c.Get(keyConfig); ok {
-				config = v.(*Configuration)
-			} else {
-				c.Set("error_msg", ErrNoConfiguration)
-				return
-			}
 			for _, v := range config.Action {
 				if _, err := v.Action(c, &v, nil); err != nil {
 					c.Set("error_msg", err.Error())

@@ -3,7 +3,9 @@ package lazy
 import (
 	"testing"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jinzhu/gorm"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm/schema"
 
@@ -95,4 +97,31 @@ func Test_disassemble(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_associateModel(t *testing.T) {
+	initTeseDB()
+	gormDB.LogMode(true)
+	var owner Owner
+	assert.NoError(t, createModel(gormDB, &Owner{Name: "has-one-owner", Dog: Dog{Name: "has-one-dog"}}))
+	sel := sq.Select("*").From("owners")
+	sel = SelectBuilder(sel, map[string][]interface{}{"name": {"has-one-owner"}}, nil, nil, nil, nil)
+	data, err := ExecSelect(gormDB, sel)
+	if err != nil {
+		logrus.WithError(err).Error()
+		return
+	}
+	MapStruct(data[0], &owner)
+	logrus.Printf("%+v", owner)
+	if err := associateModel(gormDB, &owner); err != nil {
+		logrus.WithError(err).Error()
+		return
+	}
+	logrus.Printf("%+v", owner)
+}
+
+func Test_queryAssociated(t *testing.T) {
+	initTeseDB()
+	gotRet := queryAssociated(gormDB, "dogs", "id", 1)
+	assert.Equal(t, len(gotRet), 1)
 }

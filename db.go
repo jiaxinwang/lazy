@@ -1,6 +1,8 @@
 package lazy
 
 import (
+	"fmt"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
@@ -100,8 +102,8 @@ func createModel(db *gorm.DB, model interface{}) (err error) {
 				key := v.ForeignFieldNames[0]
 				m = append(m, valueOfJSONKey(vvv, key).ToString())
 			}
-			eqs[v.ForeignFieldNames[0]] = m
 
+			eqs[v.ForeignFieldNames[0]] = m
 			sel := sq.Select("*").From(v.DBName)
 			sel = SelectBuilder(sel, eqs, nil, nil, nil, nil)
 			data, _ := ExecSelect(db, sel)
@@ -116,5 +118,86 @@ func createModel(db *gorm.DB, model interface{}) (err error) {
 			return
 		}
 	}
+	return
+}
+
+func associateModel(db *gorm.DB, model interface{}) (err error) {
+	sfs := db.NewScope(model).GetStructFields()
+	for _, v := range sfs {
+		if v.Relationship != nil {
+			r := v.Relationship
+			switch r.Kind {
+			case string(schema.BelongsTo):
+				// logrus.Panic()
+			case string(schema.HasOne):
+				av, err := valueOfField(model, r.AssociationForeignFieldNames[0])
+				if err != nil {
+					return err
+				}
+				if f, ok := newStruct(v.Struct.Type.Name()); ok {
+					sel := sq.Select("*").From(db.NewScope(f).TableName())
+					sel = SelectBuilder(sel, map[string][]interface{}{r.ForeignDBNames[0]: {av}}, nil, nil, nil, nil)
+					data, _ := ExecSelect(db, sel)
+					if err = MapStruct(data[0], &f); err != nil {
+						return err
+					}
+					setField(model, v.Name, f)
+				} else {
+					return ErrHasAssociations
+				}
+			case string(schema.HasMany):
+				av, err := valueOfField(model, r.AssociationForeignFieldNames[0])
+				if err != nil {
+					return err
+				}
+				set := make([]interface{}, 0)
+				if f, ok := newStruct(v.Struct.Type.Elem().Name()); ok {
+					sel := sq.Select("*").From(db.NewScope(f).TableName())
+					sel = SelectBuilder(sel, map[string][]interface{}{r.ForeignDBNames[0]: {av}}, nil, nil, nil, nil)
+					data, _ := ExecSelect(db, sel)
+					for _, datav := range data {
+						if err = MapStruct(datav, &f); err != nil {
+							return err
+						}
+						set = append(set, f)
+
+					}
+				} else {
+					return ErrHasAssociations
+				}
+				setJSONField(model, v.Tag.Get("json"), set)
+			case string(schema.Many2Many):
+				aaa := valueOfJSONKey(model, r.AssociationForeignFieldNames[0]).ToString()
+				cond := fmt.Sprintf(`"%s"."%s" = %s`, r.JoinTableHandler.Table(db), r.ForeignDBNames[0], aaa)
+				join := fmt.Sprintf(
+					`INNER JOIN %s ON "%s"."%s" = "%s"."%s"`,
+					r.JoinTableHandler.Table(db),
+					r.JoinTableHandler.Table(db),
+					r.AssociationForeignDBNames[0],
+					v.DBName,
+					r.AssociationForeignFieldNames[0],
+				)
+
+				sel := sq.Select("*").From(v.DBName).JoinClause(join).Where(cond)
+
+				data, _ := ExecSelect(db, sel)
+				logrus.Print(data)
+				logrus.Print(v.Tag.Get("json"))
+				if err = setJSONField(model, v.Tag.Get("json"), data); err != nil {
+					logrus.WithError(err).Error()
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func queryAssociated(db *gorm.DB, foreignDBName, foreignFieldName string, foreignFieldValue interface{}) (ret []map[string]interface{}) {
+	eqs := make(map[string][]interface{})
+	eqs[foreignFieldName] = []interface{}{foreignFieldValue}
+	sel := sq.Select("*").From(foreignDBName)
+	sel = SelectBuilder(sel, eqs, nil, nil, nil, nil)
+	ret, _ = ExecSelect(db, sel)
 	return
 }

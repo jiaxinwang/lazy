@@ -20,3 +20,11 @@ func newStruct(name string) (interface{}, bool) {
 	}
 	return reflect.New(elem).Elem().Interface(), true
 }
+
+func newStructSlice(name string) (interface{}, bool) {
+	elem, ok := registry[name]
+	if !ok {
+		return nil, false
+	}
+	return reflect.MakeSlice(reflect.SliceOf(elem), 0, 0).Interface(), true
+}

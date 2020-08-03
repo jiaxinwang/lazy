@@ -111,14 +111,6 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 
 	set := foreignOfModel((*config).Model)
 
-	// FIXME:
-	// if config.BeforeAction != nil {
-	// 	_, _, errBefore := config.BeforeAction.Action(c, config.DB, *config, nil)
-	// 	if errBefore != nil {
-	// 		return nil, errBefore
-	// 	}
-	// }
-
 	paramsItr, ok := c.Get(keyParams)
 	if !ok {
 		return nil, errors.New("can't find lazy params")
@@ -136,7 +128,7 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 		merged = mergeValues(c.Request.URL.Query(), additional.(map[string][]string))
 	}
 
-	eq, gt, lt, gte, lte := LazyURLValues(config.Model, merged)
+	eq, gt, lt, gte, lte := URLValues(config.Model, merged)
 
 	sel := sq.Select(config.Columms).From(config.Table).Limit(limit).Offset(limit*page + offset)
 	sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
@@ -165,6 +157,70 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 			}
 		}
 
+		// TODO: batch
+
+		config.Results = append(config.Results, tmp)
+	}
+
+	count := int64(len(data))
+
+	if config.NeedCount {
+		sel := sq.Select(`count(1) as c`).From(config.Table)
+		sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
+		data, err = ExecSelect(config.DB, sel)
+		if err != nil {
+			return
+		}
+		if len(data) == 1 {
+			iter, _ := data[0][`c`]
+			count, err = strconv.ParseInt(fmt.Sprintf("%v", iter), 10, 64)
+			if err != nil {
+				return
+			}
+		}
+	}
+	logrus.WithField("count", count).Info()
+	c.Set(keyCount, count)
+	c.Set(keyData, config.Results)
+	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
+	return
+}
+
+// DefaultGetAction execute actions and returns response
+func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+	var config *Configuration
+	if v, ok := c.Get(keyConfig); ok {
+		config = v.(*Configuration)
+	} else {
+		return nil, ErrNoConfiguration
+	}
+
+	paramsItr, ok := c.Get(keyParams)
+	if !ok {
+		return nil, ErrParamMissing
+	}
+	params := paramsItr.(Params)
+	filterParams, page, limit, offset := separatePage(params)
+	c.Set(keyParams, filterParams)
+	if limit == 0 {
+		limit = 10000
+	}
+
+	eq, gt, lt, gte, lte := URLValues(config.Model, params)
+
+	sel := sq.Select(config.Columms).From(config.Table).Limit(limit).Offset(limit*page + offset)
+	sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
+	data, err = ExecSelect(config.DB, sel)
+	if err != nil {
+		return
+	}
+
+	for _, v := range data {
+		if err := MapStruct(v, config.Model); err != nil {
+			return nil, err
+		}
+		tmp := clone(config.Model)
+		associateModel(config.DB, tmp)
 		// TODO: batch
 
 		config.Results = append(config.Results, tmp)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	gm "github.com/jiaxinwang/common/gin-middleware"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/go-cmp/cmp"
@@ -36,6 +37,7 @@ func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
 				Model:     &Dog{},
 				Results:   []interface{}{},
 				NeedCount: true,
+				Action:    []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultGetAction}},
 			}
 			c.Set(keyConfig, &config)
 			return
@@ -116,24 +118,24 @@ func TestActionHandlePage(t *testing.T) {
 
 }
 
-func TestActionHandle(t *testing.T) {
-	r := buildDogGetRouter(router())
+// func TestActionHandle(t *testing.T) {
+// 	r := buildDogGetRouter(router())
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/dogs", nil)
-	q := req.URL.Query()
-	q.Add("id", `1`)
-	q.Add("id", `2`)
-	req.URL.RawQuery = q.Encode()
+// 	w := httptest.NewRecorder()
+// 	req, _ := http.NewRequest("GET", "/dogs", nil)
+// 	q := req.URL.Query()
+// 	q.Add("id", `1`)
+// 	q.Add("id", `2`)
+// 	req.URL.RawQuery = q.Encode()
 
-	r.ServeHTTP(w, req)
-	response := Response{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, 200, w.Code)
-	assert.NoError(t, err)
-}
+// 	r.ServeHTTP(w, req)
+// 	response := Response{}
+// 	err := json.Unmarshal(w.Body.Bytes(), &response)
+// 	assert.Equal(t, 200, w.Code)
+// 	assert.NoError(t, err)
+// }
 
-func TestActionHandleMiddleware(t *testing.T) {
+func TestDefaultGetActionMiddleware(t *testing.T) {
 	initTeseDB()
 	r := buildDogMiddlewareRouter(router())
 	w := httptest.NewRecorder()
@@ -150,10 +152,23 @@ func TestActionHandleMiddleware(t *testing.T) {
 	assert.NoError(t, err)
 	var ret Ret
 	MapStruct(response.Data.(map[string]interface{}), &ret)
-	// logrus.Printf("%+v", ret)
+	//
 
-	assert.Equal(t, 9, ret.Count)
-	assert.Equal(t, 9, len(ret.Items))
+	assert.Equal(t, 2, ret.Count)
+	assert.Equal(t, 2, len(ret.Items))
+
+	assert.Equal(t, ret.Items[0].ID, uint(1))
+	assert.Equal(t, ret.Items[1].ID, uint(2))
+
+	assert.Equal(t, len(ret.Items[0].Toys), 2)
+	assert.Equal(t, len(ret.Items[1].Toys), 2)
+
+	// var dog1 Dog
+	// gormDB.Where("id = 1").Find(&dog1)
+	// gormDB.Model(&dog1).Related(&(dog1.Toys))
+
+	logrus.Printf("%+v", ret)
+
 }
 
 // func TestBeforeActionHandle(t *testing.T) {
