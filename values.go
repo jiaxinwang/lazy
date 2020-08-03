@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -462,8 +461,9 @@ func Lazy(params map[string][]string) (eq map[string][]string, gt, lt, gte, lte 
 	return
 }
 
-// LazyURLValues ...
-func LazyURLValues(s interface{}, q url.Values) (eqm map[string][]interface{}, gtm, ltm, gtem, ltem map[string]interface{}) {
+// URLValues ...
+// func URLValues(s interface{}, q url.Values) (eqm map[string][]interface{}, gtm, ltm, gtem, ltem map[string]interface{}) {
+func URLValues(s interface{}, q Params) (eqm map[string][]interface{}, gtm, ltm, gtem, ltem map[string]interface{}) {
 	eq, gt, lt, gte, lte := Lazy(q)
 	eqm = TagSlice(s, eq)
 	gtm = Tag(s, gt)

@@ -39,6 +39,29 @@ func isNil(i interface{}) bool {
 	return false
 }
 
+func setJSONField(src interface{}, name string, v interface{}) error {
+	byte1, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+	var inter1 interface{}
+	json.Unmarshal(byte1, &inter1)
+	map1 := inter1.(map[string]interface{})
+	byte2, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var inter2 interface{}
+	json.Unmarshal(byte2, &inter2)
+	map1[name] = inter2
+	s, err := json.MarshalToString(map1)
+	if err != nil {
+		return err
+	}
+	json.UnmarshalFromString(s, src)
+	return nil
+}
+
 func setField(src interface{}, name string, v interface{}) (err error) {
 	ps := reflect.ValueOf(src)
 	s := ps.Elem()
@@ -64,6 +87,11 @@ func setField(src interface{}, name string, v interface{}) (err error) {
 		return
 	}
 	return
+}
+
+func valueOfField(src interface{}, name string) (v interface{}, err error) {
+	val := reflect.ValueOf(src).Elem()
+	return val.FieldByName(name).Interface(), nil
 }
 
 func valueOfJSONKey(inter interface{}, key string) jsoniter.Any {

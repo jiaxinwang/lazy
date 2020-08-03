@@ -21,9 +21,9 @@ func valueOfParams(params Params, key string) (value string) {
 	return ``
 }
 
-func separatePage(params Params) (remain Params, page, limit, offset uint64) {
+func separatePage(params Params) (filterParams Params, page, limit, offset uint64) {
 	var s Params
-	s, remain = separateParams(params, "offset", "page", "limit")
+	s, filterParams = separateParams(params, "offset", "page", "limit")
 	str := valueOfParams(s, `offset`)
 	offset, _ = strconv.ParseUint(str, 10, 64)
 	str = valueOfParams(s, `page`)
