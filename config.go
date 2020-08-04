@@ -32,5 +32,13 @@ type ActionConfiguration struct {
 	ResultMap          map[string]string
 	IgnoreAssociations bool
 	NeedCount          bool
+	Payload            interface{}
 	Action             func(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error)
+}
+
+// HTTPRequest ...
+type HTTPRequest struct {
+	RequestURL    string
+	RequestMethod string
+	RequestBody   interface{}
 }

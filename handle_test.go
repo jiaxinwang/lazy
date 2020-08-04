@@ -135,6 +135,37 @@ func TestActionHandlePage(t *testing.T) {
 // 	assert.NoError(t, err)
 // }
 
+func TestDefaultHTTPActionMiddleware(t *testing.T) {
+	initTeseDB()
+	r := router()
+	g := r.Use(MiddlewareTransParams).Use(Middleware)
+	{
+		g.GET("/dogs/http", func(c *gin.Context) {
+			// payload := &HTTPRequest{"https://httpbin.org/anything/1", "GET", map[string]interface{}{"k": 1}}
+			payload := &HTTPRequest{"https://httpbin.org/anything/1", "GET", 1}
+			config := Configuration{
+				DB:        gormDB,
+				Table:     "dogs",
+				Columms:   "*",
+				Model:     &Dog{},
+				Results:   []interface{}{},
+				NeedCount: true,
+				Action:    []ActionConfiguration{{DB: gormDB, Payload: payload, ResultMap: map[string]string{"x": "id"}, Action: DefaultHTTPRequestAction}},
+			}
+			c.Set(keyConfig, &config)
+			return
+		})
+	}
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/dogs/http", nil)
+	r.ServeHTTP(w, req)
+	response := Response{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, 200, w.Code)
+	assert.NoError(t, err)
+}
+
 func TestDefaultGetActionMiddleware(t *testing.T) {
 	initTeseDB()
 	r := buildDogMiddlewareRouter(router())

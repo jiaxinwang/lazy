@@ -34,10 +34,6 @@ func Middleware(c *gin.Context) {
 
 		switch c.Request.Method {
 		case http.MethodGet:
-			// if _, err := GetHandle(c); err != nil {
-			// 	c.Set("error_msg", err.Error())
-			// 	return
-			// }
 			for _, v := range config.Action {
 				if _, err := v.Action(c, &v, nil); err != nil {
 					c.Set("error_msg", err.Error())

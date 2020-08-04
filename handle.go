@@ -4,6 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
+
+	"github.com/antchfx/jsonquery"
+	"github.com/levigross/grequests"
 
 	"gorm.io/gorm/schema"
 
@@ -247,5 +251,24 @@ func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload
 	c.Set(keyCount, count)
 	c.Set(keyData, config.Results)
 	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
+	return
+}
+
+// DefaultHTTPRequestAction ...
+func DefaultHTTPRequestAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+	requestConfig := actionConfig.Payload.(*HTTPRequest)
+	logrus.Printf("%+v", requestConfig)
+	var resp *grequests.Response
+	ro := &grequests.RequestOptions{
+		JSON: requestConfig.RequestBody,
+	}
+	if resp, err = grequests.Get(requestConfig.RequestURL, ro); err != nil {
+		return nil, err
+	}
+	doc, err := jsonquery.Parse(strings.NewReader(resp.String()))
+	node, err := jsonquery.Query(doc, "data")
+	logrus.Print(err)
+	logrus.Print(node.InnerText())
+
 	return
 }
