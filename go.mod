@@ -1,4 +1,4 @@
-module lazy
+module github.com/jiaxinwang/lazy
 
 go 1.14
 
