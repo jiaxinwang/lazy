@@ -2,3 +2,4 @@
 .DS_Store
 vendor
 *.db
+handle_network_inner_test.go
