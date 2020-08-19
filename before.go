@@ -12,7 +12,7 @@ import (
 
 // DefaultBeforeAction ...
 func DefaultBeforeAction(c *gin.Context, gormDB *gorm.DB, config Configuration, payload interface{}) (result interface{}, reduce map[string][]string, err error) {
-	v, _ := c.Get(keyParams)
+	v, _ := c.Get(KeyParams)
 	params := v.(Params)
 
 	// eq, gt, lt, gte, lte, r := BeforeLazy(c.Request.URL.Query())

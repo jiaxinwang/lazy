@@ -7,21 +7,24 @@ import (
 )
 
 var (
-	keyParams  = `_lazy_params`
+	// KeyParams ...
+	KeyParams = `_lazy_params`
+	// KeyBody ...
+	KeyBody    = `_lazy_body`
 	keyResults = `_lazy_results`
 	keyCount   = `_lazy_count`
 	keyData    = `_lazy_data`
 	keyConfig  = `_lazy_configuration`
 )
 
-// MiddlewareTransParams trans params into content
+// MiddlewareTransParams ...
 func MiddlewareTransParams(c *gin.Context) {
 	params := Params(c.Request.URL.Query())
-	c.Set(keyParams, params)
+	c.Set(KeyParams, params)
 	c.Next()
 }
 
-// Middleware run the query
+// Middleware ...
 func Middleware(c *gin.Context) {
 	defer func() {
 		var config *Configuration
@@ -35,7 +38,7 @@ func Middleware(c *gin.Context) {
 		switch c.Request.Method {
 		case http.MethodGet:
 			for _, v := range config.Action {
-				if _, err := v.Action(c, &v, nil); err != nil {
+				if _, err := v.Action(c, &v, v.Payload); err != nil {
 					c.Set("error_msg", err.Error())
 				}
 			}

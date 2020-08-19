@@ -115,13 +115,13 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 
 	set := foreignOfModel((*config).Model)
 
-	paramsItr, ok := c.Get(keyParams)
+	paramsItr, ok := c.Get(KeyParams)
 	if !ok {
 		return nil, errors.New("can't find lazy params")
 	}
 	params := paramsItr.(Params)
 	remain, page, limit, offset := separatePage(params)
-	c.Set(keyParams, remain)
+	c.Set(KeyParams, remain)
 	if limit == 0 {
 		limit = 10000
 	}
@@ -199,13 +199,13 @@ func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload
 		return nil, ErrNoConfiguration
 	}
 
-	paramsItr, ok := c.Get(keyParams)
+	paramsItr, ok := c.Get(KeyParams)
 	if !ok {
 		return nil, ErrParamMissing
 	}
 	params := paramsItr.(Params)
 	filterParams, page, limit, offset := separatePage(params)
-	c.Set(keyParams, filterParams)
+	c.Set(KeyParams, filterParams)
 	if limit == 0 {
 		limit = 10000
 	}
