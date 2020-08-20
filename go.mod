@@ -16,6 +16,7 @@ require (
 	github.com/levigross/grequests v0.0.0-20190908174114-253788527a1a
 	github.com/mitchellh/mapstructure v1.3.3
 	github.com/sirupsen/logrus v1.6.0
+	github.com/spyzhov/ajson v0.4.2
 	github.com/stretchr/testify v1.6.1
 	github.com/tidwall/sjson v1.1.1
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect

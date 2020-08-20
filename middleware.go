@@ -17,8 +17,8 @@ var (
 	keyConfig  = `_lazy_configuration`
 )
 
-// MiddlewareTransParams ...
-func MiddlewareTransParams(c *gin.Context) {
+// MiddlewareParams ...
+func MiddlewareParams(c *gin.Context) {
 	params := Params(c.Request.URL.Query())
 	c.Set(KeyParams, params)
 	c.Next()

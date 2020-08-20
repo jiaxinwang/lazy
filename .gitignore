@@ -3,3 +3,4 @@
 vendor
 *.db
 handle_network_inner_test.go
+test

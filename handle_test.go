@@ -27,7 +27,7 @@ func router() *gin.Engine {
 }
 
 func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
-	g := r.Use(MiddlewareTransParams).Use(Middleware)
+	g := r.Use(MiddlewareParams).Use(Middleware)
 	{
 		g.GET("/dogs", func(c *gin.Context) {
 			config := Configuration{
@@ -69,7 +69,7 @@ func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
 }
 
 func buildDogGetRouter(r *gin.Engine) *gin.Engine {
-	r.Use(MiddlewareTransParams).GET("/dogs", func(c *gin.Context) {
+	r.Use(MiddlewareParams).GET("/dogs", func(c *gin.Context) {
 		config := Configuration{
 			DB:        gormDB,
 			Table:     "dogs",
@@ -138,7 +138,7 @@ func TestActionHandlePage(t *testing.T) {
 func TestDefaultHTTPActionMiddleware(t *testing.T) {
 	initTeseDB()
 	r := router()
-	g := r.Use(MiddlewareTransParams).Use(Middleware)
+	g := r.Use(MiddlewareParams).Use(Middleware)
 	{
 		g.GET("/dogs/http", func(c *gin.Context) {
 			// payload := &HTTPRequest{"https://httpbin.org/anything/1", "GET", map[string]interface{}{"k": 1}}
