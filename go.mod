@@ -18,6 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spyzhov/ajson v0.4.2
 	github.com/stretchr/testify v1.6.1
+	github.com/tidwall/gjson v1.6.0
 	github.com/tidwall/sjson v1.1.1
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	gorm.io/gorm v0.2.24

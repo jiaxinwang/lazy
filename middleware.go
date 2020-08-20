@@ -1,9 +1,11 @@
 package lazy
 
 import (
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -21,6 +23,19 @@ var (
 func MiddlewareParams(c *gin.Context) {
 	params := Params(c.Request.URL.Query())
 	c.Set(KeyParams, params)
+
+	body := make(map[string]interface{})
+
+	if b, err := ioutil.ReadAll(c.Request.Body); err != nil {
+		logrus.WithError(err).Trace()
+	} else {
+		if json.Unmarshal(b, &body) != nil {
+			logrus.WithError(err).Trace()
+		} else {
+			c.Set(KeyBody, body)
+		}
+	}
+
 	c.Next()
 }
 
@@ -34,7 +49,6 @@ func Middleware(c *gin.Context) {
 			c.Set("error_msg", ErrNoConfiguration)
 			return
 		}
-
 		switch c.Request.Method {
 		case http.MethodGet:
 			for _, v := range config.Action {
@@ -42,7 +56,6 @@ func Middleware(c *gin.Context) {
 					c.Set("error_msg", err.Error())
 				}
 			}
-
 			if data, exist := c.Get(keyResults); exist {
 				c.Set("ret", map[string]interface{}{"data": data})
 			}
@@ -56,7 +69,7 @@ func Middleware(c *gin.Context) {
 			}
 		case http.MethodPost:
 			for _, v := range config.Action {
-				if _, err := v.Action(c, &v, nil); err != nil {
+				if _, err := v.Action(c, &v, v.Payload); err != nil {
 					c.Set("error_msg", err.Error())
 				}
 			}

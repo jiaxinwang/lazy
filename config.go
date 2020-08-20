@@ -21,6 +21,14 @@ type Configuration struct {
 	After              []ActionConfiguration
 }
 
+// JSONPathMap ...
+type JSONPathMap struct {
+	Src     string
+	Dest    string
+	Default interface{}
+	Remove  bool
+}
+
 // ActionConfiguration configs action, before-action, after-action values and actions
 type ActionConfiguration struct {
 	DB                 *gorm.DB
@@ -28,8 +36,8 @@ type ActionConfiguration struct {
 	Columms            string
 	Model              interface{}
 	Results            []interface{}
-	Params             []string
-	ResultMap          map[string]string
+	Params             []JSONPathMap
+	ResultMaps         []JSONPathMap
 	IgnoreAssociations bool
 	NeedCount          bool
 	Payload            interface{}

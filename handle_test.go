@@ -150,7 +150,7 @@ func TestDefaultHTTPActionMiddleware(t *testing.T) {
 				Model:     &Dog{},
 				Results:   []interface{}{},
 				NeedCount: true,
-				Action:    []ActionConfiguration{{DB: gormDB, Payload: payload, ResultMap: map[string]string{"x": "id"}, Action: DefaultHTTPRequestAction}},
+				Action:    []ActionConfiguration{{DB: gormDB, Payload: payload, Action: DefaultHTTPRequestAction}},
 			}
 			c.Set(keyConfig, &config)
 			return
