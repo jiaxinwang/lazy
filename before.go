@@ -25,10 +25,10 @@ func DefaultBeforeAction(c *gin.Context, gormDB *gorm.DB, config Configuration, 
 	gormDB.LogMode(true)
 
 	cols := make([]string, 0)
-
-	for k := range config.BeforeAction.ResultMap {
-		cols = append(cols, k)
-	}
+	// TODO:
+	// for k := range config.BeforeAction.ResultMaps {
+	// 	cols = append(cols, k)
+	// }
 	colStr := strings.Join(cols, `,`)
 
 	sel := db.SelectBuilder(sq.Select(colStr).From(config.BeforeAction.Table), eqm, gtm, ltm, gtem, ltem)

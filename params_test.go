@@ -197,7 +197,7 @@ func Test_transJSONSingle(t *testing.T) {
 			args{
 				`{"name":{"first":"Janet","last":"Prichard"},"age":47}`,
 				`{}`,
-				JSONPathMap{"age", "age", true},
+				JSONPathMap{"age", "age", nil, true},
 			},
 			`{"name":{"first":"Janet","last":"Prichard"}}`,
 			`{"age":47}`,

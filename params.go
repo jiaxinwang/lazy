@@ -102,6 +102,9 @@ func transJSONSingle(src, dest map[string]interface{}, m JSONPathMap) (convertSr
 		return src, dest, err
 	}
 	value := gjson.Get(srcStr, m.Src).Value()
+	if value == nil {
+		value = m.Default
+	}
 	destStr, err = sjson.Set(destStr, m.Dest, value)
 	if err != nil {
 		return src, dest, err

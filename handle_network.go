@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/levigross/grequests"
 	"github.com/sirupsen/logrus"
-	"github.com/spyzhov/ajson"
 )
 
 // DefaultNetworkAction ...
@@ -15,6 +14,17 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *ActionConfiguration, pay
 	method := payloadSet["_method"].(string)
 	url := payloadSet["_url"].(string)
 	ro := payloadSet["_request_options"].(*grequests.RequestOptions)
+	body, _ := c.Get(KeyBody)
+	src := body.(map[string]interface{})
+	dest := make(map[string]interface{})
+	for _, v := range actionConfig.Params {
+		if src, dest, err = transJSONSingle(src, dest, v); err != nil {
+			logrus.WithError(err).Trace()
+		}
+	}
+
+	bodyByte, _ := json.Marshal(dest)
+	ro.JSON = bodyByte
 	resp := &grequests.Response{}
 
 	switch method {
@@ -29,15 +39,20 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *ActionConfiguration, pay
 	case http.MethodOptions:
 	case http.MethodTrace:
 	}
-	logrus.Trace(resp.StatusCode)
-	// logrus.Trace(resp.Bytes())
-	logrus.Trace(resp.String())
 
-	root, _ := ajson.Unmarshal(resp.Bytes())
-	nodes, _ := root.JSONPath("$..user_id")
-	for _, node := range nodes {
-		logrus.Print(node.String())
+	respStruct := make(map[string]interface{})
+	json.UnmarshalFromString(resp.String(), &respStruct)
+	ret := make(map[string]interface{})
+
+	if actionConfig.ResultMaps != nil {
+		for _, v := range actionConfig.ResultMaps {
+			if respStruct, ret, err = transJSONSingle(respStruct, ret, v); err != nil {
+				logrus.WithError(err).Trace()
+			}
+		}
 	}
 
-	return nil, nil
+	c.Set(keyResults, ret)
+	logrus.Print(ret)
+	return []map[string]interface{}{ret}, nil
 }

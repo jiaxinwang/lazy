@@ -22,7 +22,6 @@ func TestMiddlewareParams(t *testing.T) {
 		name string
 		args args
 	}{
-		// TODO: Add test cases.
 		{"case-1", args{genContent(), `/?name=1`, `{"name":"test-put-dog-1"}`}},
 	}
 	for _, tt := range tests {
@@ -30,8 +29,6 @@ func TestMiddlewareParams(t *testing.T) {
 			contentBuffer := bytes.NewBuffer([]byte(tt.args.json))
 			tt.args.c.Request, _ = http.NewRequest("POST", tt.args.url, contentBuffer)
 			MiddlewareParams(tt.args.c)
-			logrus.Debug(tt.args.c.Get(KeyParams))
-			logrus.Debug(tt.args.c.Get(KeyBody))
 		})
 	}
 }
