@@ -21,6 +21,13 @@ type Configuration struct {
 	After              []ActionConfiguration
 }
 
+// JSONPathMap ...
+type JSONPathMap struct {
+	Src    string
+	Dest   string
+	Remove bool
+}
+
 // ActionConfiguration configs action, before-action, after-action values and actions
 type ActionConfiguration struct {
 	DB                 *gorm.DB

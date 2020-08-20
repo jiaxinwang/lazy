@@ -1,8 +1,14 @@
 package lazy
 
 import (
+	"bytes"
+	"encoding/gob"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 // Params maps a string key to a list of values.
@@ -60,4 +66,56 @@ func separatePrefixParams(whole Params, prefix string) (separated, remain Params
 		}
 	}
 	return separateParams(whole, keys...)
+}
+
+// transJSON ...
+func transJSON(src map[string]interface{}, maps []JSONPathMap) (dest map[string]interface{}) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	dec := gob.NewDecoder(&buf)
+	if err := enc.Encode(src); err != nil {
+		logrus.WithError(err).Trace()
+		return
+	}
+	if err := dec.Decode(&dest); err != nil {
+		logrus.WithError(err).Trace()
+		return
+	}
+	var err error
+	for _, v := range maps {
+		src, dest, err = transJSONSingle(src, dest, v)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func transJSONSingle(src, dest map[string]interface{}, m JSONPathMap) (convertSrc, convertDesc map[string]interface{}, err error) {
+	srcStr, err := json.MarshalToString(src)
+	if err != nil {
+		return src, dest, err
+	}
+	destStr, err := json.MarshalToString(dest)
+	if err != nil {
+		return src, dest, err
+	}
+	value := gjson.Get(srcStr, m.Src).Value()
+	destStr, err = sjson.Set(destStr, m.Dest, value)
+	if err != nil {
+		return src, dest, err
+	}
+	if m.Remove {
+		if srcStr, err = sjson.Delete(srcStr, m.Src); err != nil {
+			return src, dest, err
+		}
+	}
+	if err = json.UnmarshalFromString(srcStr, &convertSrc); err != nil {
+		return src, dest, err
+	}
+	if err = json.UnmarshalFromString(destStr, &convertDesc); err != nil {
+		return src, dest, err
+	}
+	return
 }

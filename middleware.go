@@ -1,9 +1,11 @@
 package lazy
 
 import (
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -21,6 +23,19 @@ var (
 func MiddlewareParams(c *gin.Context) {
 	params := Params(c.Request.URL.Query())
 	c.Set(KeyParams, params)
+
+	body := make(map[string]interface{})
+
+	if b, err := ioutil.ReadAll(c.Request.Body); err != nil {
+		logrus.WithError(err).Trace()
+	} else {
+		if json.Unmarshal(b, &body) != nil {
+			logrus.WithError(err).Trace()
+		} else {
+			c.Set(KeyBody, params)
+		}
+	}
+
 	c.Next()
 }
 

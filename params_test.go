@@ -4,8 +4,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sirupsen/logrus"
 )
 
+func init() {
+	logrus.SetLevel(logrus.TraceLevel)
+}
 func Test_separateParams(t *testing.T) {
 	type args struct {
 		whole Params
@@ -147,6 +151,78 @@ func Test_separatePage(t *testing.T) {
 			}
 			if gotOffset != tt.wantOffset {
 				t.Errorf("separatePage() gotOffset = %v, want %v", gotOffset, tt.wantOffset)
+			}
+		})
+	}
+}
+
+func Test_convertJSONMap(t *testing.T) {
+	type args struct {
+		src  map[string]interface{}
+		maps []JSONPathMap
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantDest map[string]interface{}
+	}{
+		{"case-1", args{map[string]interface{}{"k": "v"}, nil}, map[string]interface{}{"k": "v"}},
+		{"case-2", args{map[string]interface{}{"k1": map[string]interface{}{"k2": "v"}}, nil}, map[string]interface{}{"k1": map[string]interface{}{"k2": "v"}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotDest := transJSON(tt.args.src, tt.args.maps); !cmp.Equal(gotDest, tt.wantDest) {
+				t.Errorf("convertJSONMap() = %v, want %v\ndiff=%v", gotDest, tt.wantDest, cmp.Diff(gotDest, tt.wantDest))
+			}
+		})
+	}
+}
+
+func Test_transJSONSingle(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel)
+	type args struct {
+		src  string
+		dest string
+		m    JSONPathMap
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantConvertSrc  string
+		wantConvertDesc string
+		wantErr         bool
+	}{
+		{
+			"case-1",
+			args{
+				`{"name":{"first":"Janet","last":"Prichard"},"age":47}`,
+				`{}`,
+				JSONPathMap{"age", "age", true},
+			},
+			`{"name":{"first":"Janet","last":"Prichard"}}`,
+			`{"age":47}`,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			src := make(map[string]interface{})
+			json.UnmarshalFromString(tt.args.src, &src)
+			dest := make(map[string]interface{})
+			json.UnmarshalFromString(tt.args.dest, &dest)
+			// gotConvertSrc, gotConvertDesc, err := transJSONSingle(src, dest, tt.args.m)
+			gotConvertSrc1, gotConvertDesc1, err := transJSONSingle(src, dest, tt.args.m)
+			gotConvertSrc, _ := json.MarshalToString(gotConvertSrc1)
+			gotConvertDesc, _ := json.MarshalToString(gotConvertDesc1)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("transJSONSingle() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !cmp.Equal(gotConvertSrc, tt.wantConvertSrc) {
+				t.Errorf("transJSONSingle() gotConvertSrc = %v, want %v\ndiff=%v", gotConvertSrc, tt.wantConvertSrc, cmp.Diff(gotConvertSrc, tt.wantConvertSrc))
+			}
+			if !cmp.Equal(gotConvertDesc, tt.wantConvertDesc) {
+				t.Errorf("transJSONSingle() gotConvertDesc = %v, want %v\ndiff=%v", gotConvertDesc, tt.wantConvertDesc, cmp.Diff(gotConvertDesc, tt.wantConvertDesc))
 			}
 		})
 	}
