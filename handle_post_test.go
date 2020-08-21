@@ -90,7 +90,7 @@ func TestPostAction(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.args.c.Set(keyConfig, tt.args.conf)
+			tt.args.c.Set(KeyConfig, tt.args.conf)
 			contentBuffer := bytes.NewBuffer([]byte(tt.args.json))
 			tt.args.c.Request, _ = http.NewRequest("POST", "/dogs", contentBuffer)
 

@@ -27,7 +27,7 @@ func router() *gin.Engine {
 }
 
 func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
-	g := r.Use(MiddlewareParams).Use(Middleware)
+	g := r.Use(MiddlewareParams).Use(MiddlewareExec)
 	{
 		g.GET("/dogs", func(c *gin.Context) {
 			config := Configuration{
@@ -39,7 +39,7 @@ func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
 				NeedCount: true,
 				Action:    []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultGetAction}},
 			}
-			c.Set(keyConfig, &config)
+			c.Set(KeyConfig, &config)
 			return
 		})
 		g.DELETE("/dogs/:id", func(c *gin.Context) {
@@ -51,7 +51,7 @@ func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
 				Results:   []interface{}{},
 				NeedCount: true,
 			}
-			c.Set(keyConfig, &config)
+			c.Set(KeyConfig, &config)
 			return
 		})
 		g.POST("/dogs", func(c *gin.Context) {
@@ -60,7 +60,7 @@ func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
 				Model:  &Dog{},
 				Action: []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultPostAction}},
 			}
-			c.Set(keyConfig, &config)
+			c.Set(KeyConfig, &config)
 			return
 		})
 	}
@@ -78,13 +78,13 @@ func buildDogGetRouter(r *gin.Engine) *gin.Engine {
 			Results:   []interface{}{},
 			NeedCount: true,
 		}
-		c.Set(keyConfig, &config)
+		c.Set(KeyConfig, &config)
 		if _, err := GetHandle(c); err != nil {
-			c.Set("error_msg", err.Error())
+			c.Set(KeyErrorMessage, err.Error())
 			return
 		}
 		if v, exist := c.Get(keyResults); exist {
-			c.Set("ret", map[string]interface{}{"data": v})
+			c.Set(keyData, map[string]interface{}{"data": v})
 		}
 		return
 	})
@@ -138,7 +138,7 @@ func TestActionHandlePage(t *testing.T) {
 func TestDefaultHTTPActionMiddleware(t *testing.T) {
 	initTeseDB()
 	r := router()
-	g := r.Use(MiddlewareParams).Use(Middleware)
+	g := r.Use(MiddlewareParams).Use(MiddlewareExec)
 	{
 		g.GET("/dogs/http", func(c *gin.Context) {
 			// payload := &HTTPRequest{"https://httpbin.org/anything/1", "GET", map[string]interface{}{"k": 1}}
@@ -152,7 +152,7 @@ func TestDefaultHTTPActionMiddleware(t *testing.T) {
 				NeedCount: true,
 				Action:    []ActionConfiguration{{DB: gormDB, Payload: payload, Action: DefaultHTTPRequestAction}},
 			}
-			c.Set(keyConfig, &config)
+			c.Set(KeyConfig, &config)
 			return
 		})
 	}
@@ -222,10 +222,10 @@ func TestDefaultGetActionMiddleware(t *testing.T) {
 // 		}
 // 		c.Set(keyConfig, &config)
 // 		if _, err := GetHandle(c); err != nil {
-// 			c.Set("error_msg", err.Error())
+// 			c.Set(KeyErrorMessage, err.Error())
 // 			return
 // 		}
-// 		c.Set("ret", map[string]interface{}{"data": map[string]interface{}{"count": len(config.Results), "items": config.Results}})
+// 		c.Set(keyData, map[string]interface{}{"data": map[string]interface{}{"count": len(config.Results), "items": config.Results}})
 // 		return
 // 	})
 
@@ -269,10 +269,10 @@ func TestDefaultGetActionMiddleware(t *testing.T) {
 // 		}
 // 		c.Set("lazy-configuration", &config)
 // 		if _, err := Handle(c); err != nil {
-// 			c.Set("error_msg", err.Error())
+// 			c.Set(KeyErrorMessage, err.Error())
 // 			return
 // 		}
-// 		c.Set("ret", map[string]interface{}{"data": config.Results})
+// 		c.Set(keyData, map[string]interface{}{"data": config.Results})
 // 		return
 // 	})
 
@@ -322,7 +322,7 @@ func TestDeleteHandle(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.args.c.Set(keyConfig, tt.args.conf)
+			tt.args.c.Set(KeyConfig, tt.args.conf)
 			tt.args.c.Params = []gin.Param{{
 				Key:   `id`,
 				Value: tt.args.id,

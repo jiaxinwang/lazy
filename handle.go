@@ -26,7 +26,7 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 		return nil, err
 	}
 	var config *Configuration
-	if v, ok := c.Get(keyConfig); ok {
+	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
 		return nil, ErrNoConfiguration
@@ -57,7 +57,7 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 // DefaultPostAction execute default post.
 func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
 	var config *Configuration
-	if v, ok := c.Get(keyConfig); ok {
+	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
 		return nil, ErrNoConfiguration
@@ -69,7 +69,7 @@ func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payloa
 	err = createModel(config.DB, config.Model)
 	data = make([]map[string]interface{}, 1)
 	data[0] = make(map[string]interface{})
-	data[0]["ret"] = clone(config.Model)
+	data[0][keyData] = clone(config.Model)
 	c.Set(keyResults, data)
 	return data, err
 }
@@ -77,7 +77,7 @@ func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payloa
 // PostHandle executes post.
 func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	var config *Configuration
-	if v, ok := c.Get(keyConfig); ok {
+	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
 		return nil, ErrNoConfiguration
@@ -93,7 +93,7 @@ func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 // PutHandle executes put.
 func PutHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	var config *Configuration
-	if v, ok := c.Get(keyConfig); ok {
+	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
 		return nil, ErrNoConfiguration
@@ -107,7 +107,7 @@ func PutHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 // GetHandle executes actions and returns response
 func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	var config *Configuration
-	if v, ok := c.Get(keyConfig); ok {
+	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
 		return nil, ErrNoConfiguration
@@ -193,7 +193,7 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 // DefaultGetAction execute actions and returns response
 func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
 	var config *Configuration
-	if v, ok := c.Get(keyConfig); ok {
+	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
 		return nil, ErrNoConfiguration

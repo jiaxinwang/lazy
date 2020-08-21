@@ -33,7 +33,7 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *ActionConfiguration, pay
 	case http.MethodPost:
 		if resp, err = grequests.Post(url, ro); err != nil {
 			logrus.WithError(err).Error()
-			c.Set("error_msg", err.Error())
+			c.Set(KeyErrorMessage, err.Error())
 			return
 		}
 	case http.MethodPut:
@@ -57,6 +57,6 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *ActionConfiguration, pay
 	}
 
 	c.Set(keyResults, ret)
-	logrus.WithField("ret", ret).Trace()
+	logrus.WithField(keyData, ret).Trace()
 	return []map[string]interface{}{ret}, nil
 }

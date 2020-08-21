@@ -12,11 +12,14 @@ var (
 	// KeyParams ...
 	KeyParams = `_lazy_params`
 	// KeyBody ...
-	KeyBody    = `_lazy_body`
-	keyResults = `_lazy_results`
-	keyCount   = `_lazy_count`
-	keyData    = `_lazy_data`
-	keyConfig  = `_lazy_configuration`
+	KeyBody = `_lazy_body`
+	// KeyConfig ...
+	KeyConfig = `_lazy_configuration`
+	// KeyErrorMessage ...
+	KeyErrorMessage = `error_msg`
+	keyResults      = `_lazy_results`
+	keyCount        = `_lazy_count`
+	keyData         = `_lazy_data`
 )
 
 // MiddlewareParams ...
@@ -35,47 +38,56 @@ func MiddlewareParams(c *gin.Context) {
 			c.Set(KeyBody, body)
 		}
 	}
-
 	c.Next()
 }
 
-// Middleware ...
-func Middleware(c *gin.Context) {
+// MiddlewareDefaultResult ...
+func MiddlewareDefaultResult(c *gin.Context) {
+	defer func() {
+		if v, exist := c.Get(keyResults); exist {
+			c.Set(keyData, map[string]interface{}{"data": v})
+		}
+	}()
+	c.Next()
+}
+
+// MiddlewareExec ...
+func MiddlewareExec(c *gin.Context) {
 	defer func() {
 		var config *Configuration
-		if v, ok := c.Get(keyConfig); ok {
+		if v, ok := c.Get(KeyConfig); ok {
 			config = v.(*Configuration)
 		} else {
-			c.Set("error_msg", ErrNoConfiguration)
+			c.Set(KeyErrorMessage, ErrNoConfiguration)
 			return
 		}
 		switch c.Request.Method {
 		case http.MethodGet:
 			for _, v := range config.Action {
 				if _, err := v.Action(c, &v, v.Payload); err != nil {
-					c.Set("error_msg", err.Error())
+					c.Set(KeyErrorMessage, err.Error())
 				}
 			}
 			if data, exist := c.Get(keyResults); exist {
-				c.Set("ret", map[string]interface{}{"data": data})
+				c.Set(keyData, map[string]interface{}{"data": data})
 			}
 		case http.MethodDelete:
 			if _, err := DeleteHandle(c); err != nil {
-				c.Set("error_msg", err.Error())
+				c.Set(KeyErrorMessage, err.Error())
 				return
 			}
 			if data, exist := c.Get(keyResults); exist {
-				c.Set("ret", map[string]interface{}{"data": data})
+				c.Set(keyData, map[string]interface{}{"data": data})
 			}
 		case http.MethodPost:
 			for _, v := range config.Action {
 				if _, err := v.Action(c, &v, v.Payload); err != nil {
-					c.Set("error_msg", err.Error())
+					c.Set(KeyErrorMessage, err.Error())
 				}
 			}
 
 			if data, exist := c.Get(keyResults); exist {
-				c.Set("ret", map[string]interface{}{"data": data})
+				c.Set(keyData, map[string]interface{}{"data": data})
 				return
 			}
 		}
@@ -88,21 +100,21 @@ func Middleware(c *gin.Context) {
 func MiddlewareResponse(c *gin.Context) {
 	defer func() {
 		ret := make(map[string]interface{})
-		if v, ok := c.Get("ret"); ok {
+		if v, ok := c.Get(keyData); ok {
 			ret = v.(map[string]interface{})
 		}
 		if _, ok := ret["data"]; !ok {
 			ret["data"] = nil
 		}
 		if _, ok := ret["error_no"]; !ok {
-			if _, ok := ret["error_msg"]; ok {
+			if _, ok := ret[KeyErrorMessage]; ok {
 				ret["error_no"] = 400
 			} else {
 				ret["error_no"] = 0
 			}
 		}
-		if _, ok := ret["error_msg"]; !ok {
-			ret["error_msg"] = ``
+		if _, ok := ret[KeyErrorMessage]; !ok {
+			ret[KeyErrorMessage] = ``
 		}
 
 		ret["request_id"] = c.MustGet("requestID")

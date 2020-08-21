@@ -101,10 +101,10 @@ func TestBeforeParams(t *testing.T) {
 // 		}
 // 		c.Set("lazy-configuration", &config)
 // 		if _, err := Handle(c); err != nil {
-// 			c.Set("error_msg", err.Error())
+// 			c.Set(KeyErrorMessage, err.Error())
 // 			return
 // 		}
-// 		c.Set("ret", map[string]interface{}{"data": config.Target})
+// 		c.Set(keyData, map[string]interface{}{"data": config.Target})
 // 		return
 // 	})
 

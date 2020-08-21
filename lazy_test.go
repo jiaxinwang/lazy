@@ -11,7 +11,7 @@ import (
 
 type Response struct {
 	Data     interface{} `json:"data"`
-	ErrorMsg string      `json:"error_msg"`
+	ErrorMsg string      `json:KeyErrorMessage`
 	ErrorNo  int         `json:"error_no"`
 }
 
