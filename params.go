@@ -68,8 +68,8 @@ func separatePrefixParams(whole Params, prefix string) (separated, remain Params
 	return separateParams(whole, keys...)
 }
 
-// transJSON ...
-func transJSON(src map[string]interface{}, maps []JSONPathMap) (dest map[string]interface{}) {
+// SetJSON ...
+func SetJSON(src map[string]interface{}, maps []JSONPathMap) (dest map[string]interface{}) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	dec := gob.NewDecoder(&buf)
@@ -83,7 +83,7 @@ func transJSON(src map[string]interface{}, maps []JSONPathMap) (dest map[string]
 	}
 	var err error
 	for _, v := range maps {
-		src, dest, err = transJSONSingle(src, dest, v)
+		src, dest, err = SetJSONSingle(src, dest, v)
 		if err != nil {
 			return
 		}
@@ -92,7 +92,8 @@ func transJSON(src map[string]interface{}, maps []JSONPathMap) (dest map[string]
 	return
 }
 
-func transJSONSingle(src, dest map[string]interface{}, m JSONPathMap) (convertSrc, convertDesc map[string]interface{}, err error) {
+// SetJSONSingle ...
+func SetJSONSingle(src, dest map[string]interface{}, m JSONPathMap) (convertSrc, convertDesc map[string]interface{}, err error) {
 	srcStr, err := json.MarshalToString(src)
 	if err != nil {
 		return src, dest, err

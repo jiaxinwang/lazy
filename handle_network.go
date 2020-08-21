@@ -18,7 +18,7 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *ActionConfiguration, pay
 	src := body.(map[string]interface{})
 	dest := make(map[string]interface{})
 	for _, v := range actionConfig.Params {
-		if src, dest, err = transJSONSingle(src, dest, v); err != nil {
+		if src, dest, err = SetJSONSingle(src, dest, v); err != nil {
 			logrus.WithError(err).Trace()
 		}
 	}
@@ -46,7 +46,7 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *ActionConfiguration, pay
 
 	if actionConfig.ResultMaps != nil {
 		for _, v := range actionConfig.ResultMaps {
-			if respStruct, ret, err = transJSONSingle(respStruct, ret, v); err != nil {
+			if respStruct, ret, err = SetJSONSingle(respStruct, ret, v); err != nil {
 				logrus.WithError(err).Trace()
 			}
 		}

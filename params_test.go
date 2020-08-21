@@ -171,7 +171,7 @@ func Test_convertJSONMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotDest := transJSON(tt.args.src, tt.args.maps); !cmp.Equal(gotDest, tt.wantDest) {
+			if gotDest := SetJSON(tt.args.src, tt.args.maps); !cmp.Equal(gotDest, tt.wantDest) {
 				t.Errorf("convertJSONMap() = %v, want %v\ndiff=%v", gotDest, tt.wantDest, cmp.Diff(gotDest, tt.wantDest))
 			}
 		})
@@ -211,7 +211,7 @@ func Test_transJSONSingle(t *testing.T) {
 			dest := make(map[string]interface{})
 			json.UnmarshalFromString(tt.args.dest, &dest)
 			// gotConvertSrc, gotConvertDesc, err := transJSONSingle(src, dest, tt.args.m)
-			gotConvertSrc1, gotConvertDesc1, err := transJSONSingle(src, dest, tt.args.m)
+			gotConvertSrc1, gotConvertDesc1, err := SetJSONSingle(src, dest, tt.args.m)
 			gotConvertSrc, _ := json.MarshalToString(gotConvertSrc1)
 			gotConvertDesc, _ := json.MarshalToString(gotConvertDesc1)
 			if (err != nil) != tt.wantErr {
