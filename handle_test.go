@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	gm "github.com/jiaxinwang/common/gin-middleware"
 
 	// gm "github.com/jiaxinwang/common/gin-middleware"
 
@@ -22,15 +23,14 @@ type Ret struct {
 func router() *gin.Engine {
 	// gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	// r.Use(gm.Trace)
-	// r.Use(gm.LazyResponse)
+	r.Use(gm.Trace)
+	r.Use(MiddlewareResponse)
+	r.Use(MiddlewareDefaultResult)
 	return r
 }
 
 func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
 	r.Use(MiddlewareParams).Use(MiddlewareExec)
-	// r.Use(MiddlewareExec)
-	// {
 	r.GET("/dogs", func(c *gin.Context) {
 		config := Configuration{
 			DB:        gormDB,
