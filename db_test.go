@@ -13,7 +13,7 @@ import (
 )
 
 func Test_createModel(t *testing.T) {
-	initTeseDB()
+	initTestDB()
 	var dog Dog
 	assert.NoError(t, createModel(gormDB, &Owner{Name: "has-one-owner", Dog: Dog{Name: "has-one-dog"}}))
 
@@ -100,7 +100,7 @@ func Test_disassemble(t *testing.T) {
 }
 
 func Test_associateModel(t *testing.T) {
-	initTeseDB()
+	initTestDB()
 	gormDB.LogMode(true)
 	var owner Owner
 	assert.NoError(t, createModel(gormDB, &Owner{Name: "has-one-owner", Dog: Dog{Name: "has-one-dog"}}))
@@ -121,7 +121,7 @@ func Test_associateModel(t *testing.T) {
 }
 
 func Test_queryAssociated(t *testing.T) {
-	initTeseDB()
+	initTestDB()
 	gotRet := queryAssociated(gormDB, "dogs", "id", 1)
 	assert.Equal(t, len(gotRet), 1)
 }

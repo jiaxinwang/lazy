@@ -29,7 +29,7 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
-		return nil, ErrNoConfiguration
+		return nil, ErrConfigurationMissing
 	}
 
 	if !config.IgnoreAssociations {
@@ -60,7 +60,7 @@ func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payloa
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
-		return nil, ErrNoConfiguration
+		return nil, ErrConfigurationMissing
 	}
 
 	if err = c.ShouldBindJSON(config.Model); err != nil {
@@ -80,7 +80,7 @@ func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
-		return nil, ErrNoConfiguration
+		return nil, ErrConfigurationMissing
 	}
 
 	if err = c.ShouldBindJSON(config.Model); err != nil {
@@ -96,7 +96,7 @@ func PutHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
-		return nil, ErrNoConfiguration
+		return nil, ErrConfigurationMissing
 	}
 	if err = c.ShouldBindJSON(config.Model); err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
-		return nil, ErrNoConfiguration
+		return nil, ErrConfigurationMissing
 	}
 
 	set := foreignOfModel((*config).Model)
@@ -196,7 +196,7 @@ func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
-		return nil, ErrNoConfiguration
+		return nil, ErrConfigurationMissing
 	}
 
 	paramsItr, ok := c.Get(KeyParams)

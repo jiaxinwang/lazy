@@ -80,7 +80,7 @@ func TestMain(m *testing.M) {
 	}()
 }
 
-func initTeseDB() {
+func initTestDB() {
 	var err error
 	os.Remove("./test.db")
 	gormDB, err = gorm.Open("sqlite3", "./test.db")

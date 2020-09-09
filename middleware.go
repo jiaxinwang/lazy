@@ -28,16 +28,16 @@ func MiddlewareParams(c *gin.Context) {
 	c.Set(KeyParams, params)
 
 	body := make(map[string]interface{})
-
-	if b, err := ioutil.ReadAll(c.Request.Body); err != nil {
-		logrus.WithError(err).Trace()
-	} else {
-		if json.Unmarshal(b, &body) != nil {
+	if c.Request.Body != nil {
+		if b, err := ioutil.ReadAll(c.Request.Body); err != nil {
 			logrus.WithError(err).Trace()
 		} else {
-			c.Set(KeyBody, body)
+			if json.Unmarshal(b, &body) != nil {
+				logrus.WithError(err).Trace()
+			}
 		}
 	}
+	c.Set(KeyBody, body)
 	c.Next()
 }
 
@@ -58,7 +58,7 @@ func MiddlewareExec(c *gin.Context) {
 		if v, ok := c.Get(KeyConfig); ok {
 			config = v.(*Configuration)
 		} else {
-			c.Set(KeyErrorMessage, ErrNoConfiguration)
+			c.Set(KeyErrorMessage, ErrConfigurationMissing)
 			return
 		}
 		switch c.Request.Method {
@@ -85,7 +85,16 @@ func MiddlewareExec(c *gin.Context) {
 					c.Set(KeyErrorMessage, err.Error())
 				}
 			}
-
+			if data, exist := c.Get(keyResults); exist {
+				c.Set(keyData, map[string]interface{}{"data": data})
+				return
+			}
+		case http.MethodPatch:
+			for _, v := range config.Action {
+				if _, err := v.Action(c, &v, v.Payload); err != nil {
+					c.Set(KeyErrorMessage, err.Error())
+				}
+			}
 			if data, exist := c.Get(keyResults); exist {
 				c.Set(keyData, map[string]interface{}{"data": data})
 				return

@@ -50,3 +50,10 @@ type HTTPRequest struct {
 	RequestMethod string
 	RequestBody   interface{}
 }
+
+func configuration(c *gin.Context) (*Configuration, error) {
+	if v, ok := c.Get(KeyConfig); ok {
+		return v.(*Configuration), nil
+	}
+	return nil, ErrConfigurationMissing
+}

@@ -66,9 +66,7 @@ func TestDefaultPostAction(t *testing.T) {
 				),
 			)
 		}
-
 	}
-
 }
 
 func TestPostAction(t *testing.T) {
