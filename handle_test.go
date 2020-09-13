@@ -7,7 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	gm "github.com/jiaxinwang/common/gin-middleware"
-	"github.com/sirupsen/logrus"
+
+	// gm "github.com/jiaxinwang/common/gin-middleware"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/go-cmp/cmp"
@@ -19,57 +21,30 @@ type Ret struct {
 }
 
 func router() *gin.Engine {
+	// gin.SetMode(gin.TestMode)
 	r := gin.Default()
 	r.Use(gm.Trace)
-	r.Use(gm.LazyResponse)
-
+	r.Use(MiddlewareResponse)
+	r.Use(MiddlewareDefaultResult)
 	return r
 }
 
 func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
-	g := r.Use(MiddlewareParams).Use(MiddlewareExec)
-	{
-		g.GET("/dogs", func(c *gin.Context) {
-			config := Configuration{
-				DB:        gormDB,
-				Table:     "dogs",
-				Columms:   "*",
-				Model:     &Dog{},
-				Results:   []interface{}{},
-				NeedCount: true,
-				Action:    []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultGetAction}},
-			}
-			c.Set(KeyConfig, &config)
-			return
-		})
-		g.DELETE("/dogs/:id", func(c *gin.Context) {
-			config := Configuration{
-				DB:        gormDB,
-				Table:     "dogs",
-				Columms:   "*",
-				Model:     &Dog{},
-				Results:   []interface{}{},
-				NeedCount: true,
-			}
-			c.Set(KeyConfig, &config)
-			return
-		})
-		g.POST("/dogs", func(c *gin.Context) {
-			config := Configuration{
-				DB:     gormDB,
-				Model:  &Dog{},
-				Action: []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultPostAction}},
-			}
-			c.Set(KeyConfig, &config)
-			return
-		})
-	}
-
-	return r
-}
-
-func buildDogGetRouter(r *gin.Engine) *gin.Engine {
-	r.Use(MiddlewareParams).GET("/dogs", func(c *gin.Context) {
+	r.Use(MiddlewareParams).Use(MiddlewareExec)
+	r.GET("/dogs", func(c *gin.Context) {
+		config := Configuration{
+			DB:        gormDB,
+			Table:     "dogs",
+			Columms:   "*",
+			Model:     &Dog{},
+			Results:   []interface{}{},
+			NeedCount: true,
+			Action:    []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultGetAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
+	r.DELETE("/dogs/:id", func(c *gin.Context) {
 		config := Configuration{
 			DB:        gormDB,
 			Table:     "dogs",
@@ -79,64 +54,33 @@ func buildDogGetRouter(r *gin.Engine) *gin.Engine {
 			NeedCount: true,
 		}
 		c.Set(KeyConfig, &config)
-		if _, err := GetHandle(c); err != nil {
-			c.Set(KeyErrorMessage, err.Error())
-			return
-		}
-		if v, exist := c.Get(keyResults); exist {
-			c.Set(keyData, map[string]interface{}{"data": v})
-		}
 		return
 	})
+	r.POST("/dogs", func(c *gin.Context) {
+		config := Configuration{
+			DB:     gormDB,
+			Model:  &Dog{},
+			Action: []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultPostAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
+	r.PATCH("/dogs/:id", func(c *gin.Context) {
+		config := Configuration{
+			DB:     gormDB,
+			Model:  &Dog{},
+			Action: []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultPatchAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
+	// }
+
 	return r
 }
 
-func TestActionHandlePage(t *testing.T) {
-	initTeseDB()
-	r := buildDogGetRouter(router())
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/dogs", nil)
-	q := req.URL.Query()
-	q.Add(`page`, `0`)
-	q.Add(`limit`, `1`)
-	q.Add(`offset`, `1`)
-	req.URL.RawQuery = q.Encode()
-
-	r.ServeHTTP(w, req)
-	response := Response{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, 200, w.Code)
-	assert.NoError(t, err)
-
-	var ret Ret
-	MapStruct(response.Data.(map[string]interface{}), &ret)
-	// logrus.Printf("%+v", ret)
-
-	assert.Equal(t, 9, ret.Count)
-	assert.Equal(t, 1, len(ret.Items))
-
-}
-
-// func TestActionHandle(t *testing.T) {
-// 	r := buildDogGetRouter(router())
-
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("GET", "/dogs", nil)
-// 	q := req.URL.Query()
-// 	q.Add("id", `1`)
-// 	q.Add("id", `2`)
-// 	req.URL.RawQuery = q.Encode()
-
-// 	r.ServeHTTP(w, req)
-// 	response := Response{}
-// 	err := json.Unmarshal(w.Body.Bytes(), &response)
-// 	assert.Equal(t, 200, w.Code)
-// 	assert.NoError(t, err)
-// }
-
 func TestDefaultHTTPActionMiddleware(t *testing.T) {
-	initTeseDB()
+	initTestDB()
 	r := router()
 	g := r.Use(MiddlewareParams).Use(MiddlewareExec)
 	{
@@ -166,40 +110,23 @@ func TestDefaultHTTPActionMiddleware(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestDefaultGetActionMiddleware(t *testing.T) {
-	initTeseDB()
-	r := buildDogMiddlewareRouter(router())
+func setupRouter() *gin.Engine {
+	r := gin.Default()
+	r.GET("/ping", func(c *gin.Context) {
+		c.String(200, "pong")
+	})
+	return r
+}
+
+func TestGin(t *testing.T) {
+	router := setupRouter()
+
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/dogs", nil)
-	q := req.URL.Query()
-	q.Add("id", `1`)
-	q.Add("id", `2`)
-	req.URL.RawQuery = q.Encode()
+	req, _ := http.NewRequest("GET", "/ping", nil)
+	router.ServeHTTP(w, req)
 
-	r.ServeHTTP(w, req)
-	response := Response{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, 200, w.Code)
-	assert.NoError(t, err)
-	var ret Ret
-	MapStruct(response.Data.(map[string]interface{}), &ret)
-	//
-
-	assert.Equal(t, 2, ret.Count)
-	assert.Equal(t, 2, len(ret.Items))
-
-	assert.Equal(t, ret.Items[0].ID, uint(1))
-	assert.Equal(t, ret.Items[1].ID, uint(2))
-
-	assert.Equal(t, len(ret.Items[0].Toys), 2)
-	assert.Equal(t, len(ret.Items[1].Toys), 2)
-
-	// var dog1 Dog
-	// gormDB.Where("id = 1").Find(&dog1)
-	// gormDB.Model(&dog1).Related(&(dog1.Toys))
-
-	logrus.Printf("%+v", ret)
-
+	assert.Equal(t, "pong", w.Body.String())
 }
 
 // func TestBeforeActionHandle(t *testing.T) {

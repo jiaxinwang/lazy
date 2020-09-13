@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -13,6 +14,18 @@ import (
 
 // Params maps a string key to a list of values.
 type Params map[string][]string
+
+func params(c *gin.Context) (*Params, error) {
+	paramsItr, ok := c.Get(KeyParams)
+	if !ok {
+		return nil, ErrParamMissing
+	}
+	params, ok := paramsItr.(Params)
+	if !ok {
+		return nil, ErrUnknown
+	}
+	return &params, nil
+}
 
 func mergeParams(a, b Params) (ret Params) {
 	return

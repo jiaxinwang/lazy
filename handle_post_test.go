@@ -19,6 +19,7 @@ func genContent() *gin.Context {
 }
 
 func TestDefaultPostAction(t *testing.T) {
+	initTestDB()
 	r := buildDogMiddlewareRouter(router())
 	jsonParams := []string{
 		`{"name":"test-put-dog-1"}`,
@@ -66,12 +67,11 @@ func TestDefaultPostAction(t *testing.T) {
 				),
 			)
 		}
-
 	}
-
 }
 
 func TestPostAction(t *testing.T) {
+	initTestDB()
 	gin.SetMode(gin.TestMode)
 
 	type args struct {

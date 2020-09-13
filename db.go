@@ -181,8 +181,6 @@ func associateModel(db *gorm.DB, model interface{}) (err error) {
 				sel := sq.Select("*").From(v.DBName).JoinClause(join).Where(cond)
 
 				data, _ := ExecSelect(db, sel)
-				logrus.Print(data)
-				logrus.Print(v.Tag.Get("json"))
 				if err = setJSONField(model, v.Tag.Get("json"), data); err != nil {
 					logrus.WithError(err).Error()
 					return err

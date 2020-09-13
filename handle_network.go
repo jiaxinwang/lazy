@@ -14,6 +14,7 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *ActionConfiguration, pay
 	method := payloadSet["_method"].(string)
 	url := payloadSet["_url"].(string)
 	ro := payloadSet["_request_options"].(*grequests.RequestOptions)
+
 	body, _ := c.Get(KeyBody)
 	src := body.(map[string]interface{})
 	dest := make(map[string]interface{})

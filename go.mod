@@ -15,11 +15,13 @@ require (
 	github.com/json-iterator/go v1.1.10
 	github.com/levigross/grequests v0.0.0-20190908174114-253788527a1a
 	github.com/mitchellh/mapstructure v1.3.3
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.6.0
-	github.com/spyzhov/ajson v0.4.2
+	github.com/spyzhov/ajson v0.4.2 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/tidwall/gjson v1.6.0
 	github.com/tidwall/sjson v1.1.1
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gorm.io/gorm v0.2.24
 )
