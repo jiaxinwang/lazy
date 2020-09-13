@@ -80,54 +80,6 @@ func TestBeforeParams(t *testing.T) {
 	}
 }
 
-// func route() *gin.Engine {
-// 	r := gin.Default()
-// 	r.Use(gm.Trace)
-// 	r.Use(gm.LazyResponse)
-// 	r.GET("/dogs", func(c *gin.Context) {
-// 		var ret []interface{}
-// 		config := Configuration{
-// 			DB:              gormDB,
-// 			BeforeColumm:    "dog_id",
-// 			BeforeStruct:    &Profile{},
-// 			BeforeTables:    "profiles",
-// 			BeforeResultMap: map[string]string{"dog_id": "id"},
-// 			BeforeAction:    DefaultBeforeAction,
-
-// 			Table:   "dogs",
-// 			Columm:  "*",
-// 			Model:  &Dog{},
-// 			Target: ret,
-// 		}
-// 		c.Set("lazy-configuration", &config)
-// 		if _, err := Handle(c); err != nil {
-// 			c.Set(KeyErrorMessage, err.Error())
-// 			return
-// 		}
-// 		c.Set(keyData, map[string]interface{}{"data": config.Target})
-// 		return
-// 	})
-
-// 	return r
-// }
-
-// func TestDefaultBeforeAction(t *testing.T) {
-// 	router := route()
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("GET", "/dogs", nil)
-// 	q := req.URL.Query()
-// 	q.Add("before_dog_id", `1`)
-// 	q.Add("before_dog_id", `2`)
-// 	req.URL.RawQuery = q.Encode()
-
-// 	router.ServeHTTP(w, req)
-// 	ret := Response{}
-// 	err := json.Unmarshal(w.Body.Bytes(), &ret)
-// 	assert.Equal(t, 200, w.Code)
-// 	assert.NoError(t, err)
-// 	logrus.Print(ret)
-// }
-
 func Test_mergeValues(t *testing.T) {
 	type args struct {
 		a map[string][]string
