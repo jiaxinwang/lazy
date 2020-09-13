@@ -56,16 +56,26 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 
 // DefaultPostAction execute default post.
 func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+	_, _, bodyParams := ContentParams(c)
 	var config *Configuration
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
 		return nil, ErrConfigurationMissing
 	}
-
-	if err = c.ShouldBindJSON(config.Model); err != nil {
+	s, err := json.MarshalToString(bodyParams)
+	if err != nil {
+		logrus.WithError(err).Error()
+		// TODO: error
 		return nil, err
 	}
+	err = json.UnmarshalFromString(s, &config.Model)
+	if err != nil {
+		logrus.WithError(err).Error()
+		// TODO: error
+		return nil, err
+	}
+
 	err = createModel(config.DB, config.Model)
 	data = make([]map[string]interface{}, 1)
 	data[0] = make(map[string]interface{})
