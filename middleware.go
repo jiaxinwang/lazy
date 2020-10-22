@@ -64,7 +64,8 @@ func MiddlewareDefaultResult(c *gin.Context) {
 	c.Next()
 }
 
-// MiddlewareExec ...
+// MiddlewareExec provides the most basic handle for simple models,
+// in complex operations, do not use
 func MiddlewareExec(c *gin.Context) {
 	defer func() {
 		var config *Configuration
