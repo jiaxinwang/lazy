@@ -1,17 +1,22 @@
 package lazy
 
 import (
+	"fmt"
 	"os"
+	"path"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
+	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
 )
 
 type Response struct {
 	Data     interface{} `json:"data"`
-	ErrorMsg string      `json:KeyErrorMessage`
+	ErrorMsg string      `json:"error_msg"`
 	ErrorNo  int         `json:"error_no"`
 }
 
@@ -47,8 +52,8 @@ type Dog struct {
 // Profile belongs to a dog
 type Profile struct {
 	ID        uint      `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
-	CreatedAt time.Time `json:"created_at" lazy:"created_at" mapstructure:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" lazy:"updated_at" mapstructure:"updated_at"`
+	CreatedAt time.Time `json:"created_at" lazy:"" mapstructure:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" lazy:"" mapstructure:"updated_at"`
 	Age       uint      `json:"age" lazy:"age" mapstructure:"age"`
 	DogID     uint      `json:"-" lazy:"dog_id" mapstructure:"dog_id"`
 	Dog       Dog       `json:"dog" lazy:"dog" mapstructure:"dog"`
@@ -171,8 +176,21 @@ func initTestDB() {
 }
 
 func setup() {
+	logrus.SetFormatter(&nested.Formatter{
+		TrimMessages:    true,
+		TimestampFormat: "-",
+		NoFieldsSpace:   true,
+		HideKeys:        false,
+		ShowFullLevel:   true,
+		CallerFirst:     false,
+		FieldsOrder:     []string{"component", "category"},
+		CustomCallerFormatter: func(f *runtime.Frame) string {
+			s := strings.Split(f.Function, ".")
+			funcName := s[len(s)-1]
+			return fmt.Sprintf(" [%s:%d][%s()]", path.Base(f.File), f.Line, funcName)
+		},
+	})
 	logrus.SetReportCaller(true)
-	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
 }
 
 func teardown() {

@@ -2,26 +2,57 @@ package lazy
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
+// PatchHandle executes post.
+func PatchHandle(c *gin.Context) (data []map[string]interface{}, err error) {
+	// var config *Configuration
+	// if v, ok := c.Get(KeyConfig); ok {
+	// 	config = v.(*Configuration)
+	// } else {
+	// 	return nil, ErrConfigurationMissing
+	// }
+
+	// if err = c.ShouldBindJSON(config.Model); err != nil {
+	// 	return nil, err
+	// }
+
+	// return nil, createModel(config.DB, config.Model)
+	return nil, nil
+}
+
 // DefaultPatchAction ...
 func DefaultPatchAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
-	var config *Configuration
-	if config, err = configuration(c); err != nil {
-		return nil, errors.Wrap(err, ErrConfigurationMissing.Error())
-	}
+	id := c.Param("id")
+	logrus.WithField("id", id).Info()
+	// c.Params
+	// _, _, bodyParams := ContentParams(c)
+	// var config *Configuration
+	// if v, ok := c.Get(KeyConfig); ok {
+	// 	config = v.(*Configuration)
+	// } else {
+	// 	return nil, ErrConfigurationMissing
+	// }
 
-	var p *Params
-	if p, err = params(c); err != nil {
-		return nil, errors.Wrap(err, ErrConfigurationMissing.Error())
-	}
+	// s, err := json.MarshalToString(bodyParams)
+	// if err != nil {
+	// 	logrus.WithError(err).Error()
+	// 	// TODO: error
+	// 	return nil, err
+	// }
+	// err = json.UnmarshalFromString(s, &config.Model)
+	// if err != nil {
+	// 	logrus.WithError(err).Error()
+	// 	// TODO: error
+	// 	return nil, err
+	// }
 
-	eq, _, _, _, _ := URLValues(config.Model, *p)
-	logrus.Print(eq)
-
-	c.Set(keyResults, map[string]interface{}{"code": 0})
-
-	return
+	// err = createModel(config.DB, config.Model)
+	// data = make([]map[string]interface{}, 1)
+	// data[0] = make(map[string]interface{})
+	// data[0][keyData] = clone(config.Model)
+	// c.Set(keyResults, data)
+	// return data, err
+	return nil, nil
 }
