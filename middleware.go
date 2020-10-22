@@ -54,30 +54,6 @@ func MiddlewareParams(c *gin.Context) {
 	c.Next()
 }
 
-// ContentParams return params in content
-func ContentParams(c *gin.Context) (union, query, body map[string]interface{}) {
-	if v, ok := c.Get(KeyParamsUnion); ok {
-		union = v.(map[string]interface{})
-	} else {
-		union = make(map[string]interface{})
-	}
-	if v, ok := c.Get(KeyParams); ok {
-		p := v.(Params)
-		query = make(map[string]interface{})
-		for kk, vv := range p {
-			query[kk] = vv
-		}
-	} else {
-		query = make(map[string]interface{})
-	}
-	if v, ok := c.Get(KeyBody); ok {
-		body = v.(map[string]interface{})
-	} else {
-		body = make(map[string]interface{})
-	}
-	return
-}
-
 // MiddlewareDefaultResult ...
 func MiddlewareDefaultResult(c *gin.Context) {
 	defer func() {

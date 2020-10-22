@@ -2,11 +2,21 @@ package lazy
 
 import (
 	"errors"
+	"fmt"
+	"go/ast"
 	"reflect"
 	"strings"
+	"sync"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
 )
+
+var cacheStore *sync.Map
+
+func init() {
+	cacheStore = &sync.Map{}
+}
 
 func clone(inter interface{}) interface{} {
 	newInter := reflect.New(reflect.TypeOf(inter).Elem())
@@ -100,6 +110,191 @@ func valueOfJSONKey(inter interface{}, key string) jsoniter.Any {
 	}
 
 	return nil
+}
+
+// Describe ...
+type Describe struct {
+	Name         string
+	ModelType    reflect.Type
+	Fields       []*Field
+	FieldsByName map[string]*Field
+}
+
+// Field ...
+type Field struct {
+	Name              string
+	FieldType         reflect.Type
+	IndirectFieldType reflect.Type
+	StructField       reflect.StructField
+	Creatable         bool
+	Updatable         bool
+	Readable          bool
+	Post              bool
+	Put               bool
+	Get               bool
+	Patch             bool
+	Tag               reflect.StructTag
+	TagSettings       map[string]string
+}
+
+var TimeReflectType = reflect.TypeOf(time.Time{})
+
+// ParseField ...
+func ParseField(fieldStruct reflect.StructField) *Field {
+	field := &Field{
+		Name:              fieldStruct.Name,
+		FieldType:         fieldStruct.Type,
+		IndirectFieldType: fieldStruct.Type,
+		StructField:       fieldStruct,
+		Creatable:         true,
+		Updatable:         true,
+		Readable:          true,
+	}
+	for field.IndirectFieldType.Kind() == reflect.Ptr {
+		field.IndirectFieldType = field.IndirectFieldType.Elem()
+	}
+
+	// TODO: Creatable, Updatable, Readable
+
+	// field.TagSettings
+
+	fieldValue := reflect.New(field.IndirectFieldType)
+
+	var getRealFieldValue func(reflect.Value)
+	getRealFieldValue = func(v reflect.Value) {
+		rv := reflect.Indirect(v)
+		if rv.Kind() == reflect.Struct && !rv.Type().ConvertibleTo(TimeReflectType) {
+			for i := 0; i < rv.Type().NumField(); i++ {
+				newFieldType := rv.Type().Field(i).Type
+				for newFieldType.Kind() == reflect.Ptr {
+					newFieldType = newFieldType.Elem()
+				}
+
+				fieldValue = reflect.New(newFieldType)
+
+				if rv.Type() != reflect.Indirect(fieldValue).Type() {
+					getRealFieldValue(fieldValue)
+				}
+
+				if fieldValue.IsValid() {
+					return
+				}
+
+				for key, value := range ParseTagSetting(field.IndirectFieldType.Field(i).Tag.Get("gorm"), ";") {
+					if _, ok := field.TagSettings[key]; !ok {
+						field.TagSettings[key] = value
+					}
+				}
+			}
+		}
+	}
+
+	getRealFieldValue(fieldValue)
+
+	if _, ok := field.TagSettings["-"]; ok {
+		field.Creatable = false
+		field.Updatable = false
+		field.Readable = false
+		// field.DataType = ""
+	}
+
+	if v, ok := field.TagSettings["->"]; ok {
+		field.Creatable = false
+		field.Updatable = false
+		if strings.ToLower(v) == "false" {
+			field.Readable = false
+		} else {
+			field.Readable = true
+		}
+	}
+
+	if v, ok := field.TagSettings["<-"]; ok {
+		field.Creatable = true
+		field.Updatable = true
+
+		if v != "<-" {
+			if !strings.Contains(v, "create") {
+				field.Creatable = false
+			}
+
+			if !strings.Contains(v, "update") {
+				field.Updatable = false
+			}
+		}
+	}
+
+	return field
+}
+
+// ParseDescribe ...
+func ParseDescribe(inter interface{}) (*Describe, error) {
+	if inter == nil {
+		return nil, fmt.Errorf("%w: %+v", ErrNil, inter)
+	}
+	interType := reflect.ValueOf(inter).Type()
+	for interType.Kind() == reflect.Slice || interType.Kind() == reflect.Array || interType.Kind() == reflect.Ptr {
+		interType = interType.Elem()
+	}
+
+	if interType.Kind() != reflect.Struct {
+		if interType.PkgPath() == "" {
+			return nil, fmt.Errorf("%w: %+v", ErrUnsupportedDataType, inter)
+		}
+		return nil, fmt.Errorf("%w: %v.%v", ErrUnsupportedDataType, interType.PkgPath(), interType.Name())
+	}
+
+	if v, ok := cacheStore.Load(interType); ok {
+		return v.(*Describe), nil
+	}
+
+	describe := &Describe{
+		Name:         interType.Name(),
+		ModelType:    interType,
+		FieldsByName: map[string]*Field{},
+	}
+
+	// defer?
+
+	for i := 0; i < interType.NumField(); i++ {
+		if fieldStruct := interType.Field(i); ast.IsExported(fieldStruct.Name) {
+			field := ParseField(fieldStruct)
+			describe.Fields = append(describe.Fields, field)
+		}
+	}
+
+	return describe, nil
+}
+
+// ParseTagSetting ...
+func ParseTagSetting(str string, sep string) map[string]string {
+	settings := map[string]string{}
+	names := strings.Split(str, sep)
+
+	for i := 0; i < len(names); i++ {
+		j := i
+		if len(names[j]) > 0 {
+			for {
+				if names[j][len(names[j])-1] == '\\' {
+					i++
+					names[j] = names[j][0:len(names[j])-1] + sep + names[i]
+					names[i] = ""
+				} else {
+					break
+				}
+			}
+		}
+
+		values := strings.Split(names[j], ":")
+		k := strings.TrimSpace(strings.ToUpper(values[0]))
+
+		if len(values) >= 2 {
+			settings[k] = strings.Join(values[1:], ":")
+		} else if k != "" {
+			settings[k] = k
+		}
+	}
+
+	return settings
 }
 
 func valueOfTag(inter interface{}, tagName string) interface{} {

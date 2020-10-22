@@ -7,18 +7,20 @@ import (
 
 // Configuration configs lazy values and actions
 type Configuration struct {
-	DB                 *gorm.DB
-	Table              string
-	Columms            string
-	Model              interface{}
-	Results            []interface{}
+	DB      *gorm.DB
+	Table   string
+	Columms string
+	Model   interface{}
+	Results []interface{}
+	// TODO: remove it
 	BeforeAction       *ActionConfiguration
 	AfterAction        *ActionConfiguration
 	IgnoreAssociations bool
 	NeedCount          bool
 	Action             []ActionConfiguration
-	Before             []ActionConfiguration
-	After              []ActionConfiguration
+	// TODO: remove it
+	Before []ActionConfiguration
+	After  []ActionConfiguration
 }
 
 // JSONPathMap ...
@@ -38,6 +40,7 @@ type ActionConfiguration struct {
 	Results            []interface{}
 	Params             []JSONPathMap
 	ResultMaps         []JSONPathMap
+	Validates          map[string]string
 	IgnoreAssociations bool
 	NeedCount          bool
 	Payload            interface{}

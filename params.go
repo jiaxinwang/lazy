@@ -81,6 +81,42 @@ func separatePrefixParams(whole Params, prefix string) (separated, remain Params
 	return separateParams(whole, keys...)
 }
 
+// ContentParams return params in content
+func ContentParams(c *gin.Context) (union, query, body map[string]interface{}) {
+	if v, ok := c.Get(KeyParamsUnion); ok {
+		union = v.(map[string]interface{})
+	} else {
+		union = make(map[string]interface{})
+	}
+	if v, ok := c.Get(KeyParams); ok {
+		p := v.(Params)
+		query = make(map[string]interface{})
+		for kk, vv := range p {
+			query[kk] = vv
+		}
+	} else {
+		query = make(map[string]interface{})
+	}
+	if v, ok := c.Get(KeyBody); ok {
+		body = v.(map[string]interface{})
+	} else {
+		body = make(map[string]interface{})
+	}
+	return
+}
+
+// ContentParamWithJSONPath ...
+func ContentParamWithJSONPath(c *gin.Context, jsonPath string) (param interface{}) {
+	_, _, body := ContentParams(c)
+	var srcStr string
+	var err error
+	if srcStr, err = json.MarshalToString(body); err != nil {
+		return
+	}
+	ret := gjson.Get(srcStr, jsonPath)
+	return ret.Value()
+}
+
 // SetJSON ...
 func SetJSON(src map[string]interface{}, maps []JSONPathMap) (dest map[string]interface{}) {
 	var buf bytes.Buffer

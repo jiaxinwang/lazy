@@ -121,6 +121,10 @@ func createModel(db *gorm.DB, model interface{}) (err error) {
 	return
 }
 
+func updateModel(db *gorm.DB, model interface{}) (err error) {
+	return nil
+}
+
 func associateModel(db *gorm.DB, model interface{}) (err error) {
 	sfs := db.NewScope(model).GetStructFields()
 	for _, v := range sfs {
