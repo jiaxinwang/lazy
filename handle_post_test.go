@@ -20,7 +20,7 @@ func genContent() *gin.Context {
 
 func TestDefaultPostAction(t *testing.T) {
 	initTestDB()
-	r := buildDogMiddlewareRouter(router())
+	r := buildDogMiddlewareDefaultHandlerRouter(router())
 	jsonParams := []string{
 		`{"name":"test-put-dog-1"}`,
 		`{"name":"test-put-dog-2","foods":[{"id":1},{"id":2}]}`,

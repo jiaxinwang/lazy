@@ -11,7 +11,7 @@ import (
 )
 
 func buildPatchDog(r *gin.Engine) *gin.Engine {
-	g := r.Use(MiddlewareParams).Use(MiddlewareExec)
+	g := r.Use(MiddlewareParams)
 	{
 		g.PATCH("/dogs/:id", func(c *gin.Context) {
 			config := Configuration{

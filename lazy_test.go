@@ -77,6 +77,21 @@ type Breed struct {
 var gormDB *gorm.DB
 
 func TestMain(m *testing.M) {
+	logrus.SetFormatter(&nested.Formatter{
+		TrimMessages:    true,
+		TimestampFormat: "0102-150405",
+		NoFieldsSpace:   true,
+		HideKeys:        false,
+		ShowFullLevel:   true,
+		CallerFirst:     false,
+		FieldsOrder:     []string{"component", "category"},
+		CustomCallerFormatter: func(f *runtime.Frame) string {
+			s := strings.Split(f.Function, ".")
+			funcName := s[len(s)-1]
+			return fmt.Sprintf(" [%s:%d][%s()]", path.Base(f.File), f.Line, funcName)
+		},
+	})
+	logrus.SetReportCaller(true)
 	logrus.SetLevel(logrus.DebugLevel)
 	setup()
 	defer os.Exit(m.Run())

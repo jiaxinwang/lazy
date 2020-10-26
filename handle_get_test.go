@@ -5,13 +5,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultGetAction(t *testing.T) {
 	initTestDB()
-	r := buildDogMiddlewareRouter(router())
+	r := buildDogMiddlewareDefaultHandlerRouter(router())
 	w := httptest.NewRecorder()
+
+	// GET
 	req, _ := http.NewRequest("GET", "/dogs", nil)
 
 	q := req.URL.Query()
@@ -21,7 +24,7 @@ func TestDefaultGetAction(t *testing.T) {
 
 	r.ServeHTTP(w, req)
 	response := Response{}
-	// logrus.WithField("string", w.Body.String()).Print(w.Body.String())
+	logrus.WithField("string", w.Body.String()).Debug()
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, 200, w.Code)
 	assert.NoError(t, err)
