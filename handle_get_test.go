@@ -40,10 +40,12 @@ func TestDefaultGetAction(t *testing.T) {
 	assert.Equal(t, len(ret.Items[0].Toys), 2)
 	assert.Equal(t, len(ret.Items[1].Toys), 2)
 
-	// var dog1 Dog
-	// gormDB.Where("id = 1").Find(&dog1)
-	// gormDB.Model(&dog1).Related(&(dog1.Toys))
+	var dog1 Dog
+	gormDB.Where("id = 1").Find(&dog1)
+	gormDB.Model(&dog1).Related(&(dog1.Toys))
 
 	// logrus.Printf("%+v", ret)
+
+	assert.Equal(t, ret.Items[0].Name, dog1.Name)
 
 }
