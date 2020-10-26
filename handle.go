@@ -77,10 +77,10 @@ func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payloa
 	}
 
 	err = createModel(config.DB, config.Model)
-	data = make([]map[string]interface{}, 1)
-	data[0] = make(map[string]interface{})
-	data[0][keyData] = clone(config.Model)
-	c.Set(keyResults, data)
+	// data = make([]map[string]interface{}, 1)
+	// data[0] = make(map[string]interface{})
+	// data[0][keyData] = clone(config.Model)
+	// c.Set(keyResults, data)
 	return data, err
 }
 
@@ -193,10 +193,10 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 			}
 		}
 	}
-	logrus.WithField("count", count).Info()
+	// logrus.WithField("count", count).Info()
 	c.Set(keyCount, count)
 	c.Set(keyData, config.Results)
-	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
+	// c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
 	return
 }
 
@@ -211,6 +211,7 @@ func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload
 
 	paramsItr, ok := c.Get(KeyParams)
 	if !ok {
+		logrus.WithError(ErrParamMissing).Error()
 		return nil, ErrParamMissing
 	}
 	params := paramsItr.(Params)
@@ -257,10 +258,11 @@ func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload
 			}
 		}
 	}
-	logrus.WithField("count", count).Info()
+	// logrus.WithField("count", count).Info()
 	c.Set(keyCount, count)
 	c.Set(keyData, config.Results)
 	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
+	// logrus.WithField("config.Results", config.Results).Info()
 	return
 }
 

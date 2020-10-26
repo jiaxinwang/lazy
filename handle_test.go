@@ -21,16 +21,12 @@ type Ret struct {
 }
 
 func router() *gin.Engine {
-	// gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	r.Use(gm.Trace)
-	r.Use(MiddlewareResponse)
-	r.Use(MiddlewareDefaultResult)
+	r.Use(gm.Trace, MiddlewareParams, MiddlewareResponse, MiddlewareDefaultResult, MiddlewareExec)
 	return r
 }
 
-func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
-	r.Use(MiddlewareParams).Use(MiddlewareExec)
+func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
 	r.GET("/dogs", func(c *gin.Context) {
 		config := Configuration{
 			DB:        gormDB,
@@ -82,7 +78,7 @@ func buildDogMiddlewareRouter(r *gin.Engine) *gin.Engine {
 func TestDefaultHTTPActionMiddleware(t *testing.T) {
 	initTestDB()
 	r := router()
-	g := r.Use(MiddlewareParams).Use(MiddlewareExec)
+	g := r.Use(MiddlewareParams)
 	{
 		g.GET("/dogs/http", func(c *gin.Context) {
 			// payload := &HTTPRequest{"https://httpbin.org/anything/1", "GET", map[string]interface{}{"k": 1}}

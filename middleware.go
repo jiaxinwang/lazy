@@ -64,8 +64,7 @@ func MiddlewareDefaultResult(c *gin.Context) {
 	c.Next()
 }
 
-// MiddlewareExec provides the most basic handle for simple models,
-// in complex operations, do not use
+// MiddlewareExec ...
 func MiddlewareExec(c *gin.Context) {
 	defer func() {
 		var config *Configuration
@@ -76,43 +75,17 @@ func MiddlewareExec(c *gin.Context) {
 			return
 		}
 		switch c.Request.Method {
-		case http.MethodGet:
+		case http.MethodGet, http.MethodDelete, http.MethodPost, http.MethodPatch, http.MethodPut:
 			for _, v := range config.Action {
 				if _, err := v.Action(c, &v, v.Payload); err != nil {
 					c.Set(KeyErrorMessage, err.Error())
 				}
 			}
-			if data, exist := c.Get(keyResults); exist {
-				c.Set(keyData, map[string]interface{}{"data": data})
-			}
-		case http.MethodDelete:
-			if _, err := DeleteHandle(c); err != nil {
-				c.Set(KeyErrorMessage, err.Error())
-				return
-			}
-			if data, exist := c.Get(keyResults); exist {
-				c.Set(keyData, map[string]interface{}{"data": data})
-			}
-		case http.MethodPost:
-			for _, v := range config.Action {
-				if _, err := v.Action(c, &v, v.Payload); err != nil {
-					c.Set(KeyErrorMessage, err.Error())
-				}
-			}
-			if data, exist := c.Get(keyResults); exist {
-				c.Set(keyData, map[string]interface{}{"data": data})
-				return
-			}
-		case http.MethodPatch:
-			for _, v := range config.Action {
-				if _, err := v.Action(c, &v, v.Payload); err != nil {
-					c.Set(KeyErrorMessage, err.Error())
-				}
-			}
-			if data, exist := c.Get(keyResults); exist {
-				c.Set(keyData, map[string]interface{}{"data": data})
-				return
-			}
+			// case http.MethodDelete:
+			// 	// FIXME:
+			// 	if _, err := DeleteHandle(c); err != nil {
+			// 		c.Set(KeyErrorMessage, err.Error())
+			// 		return
 		}
 		return
 	}()
