@@ -17,7 +17,7 @@ func buildPatchDog(r *gin.Engine) *gin.Engine {
 			config := Configuration{
 				DB:     gormDB,
 				Model:  &Dog{},
-				Action: []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultPatchAction}},
+				Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultPatchAction}},
 			}
 			c.Set(KeyConfig, &config)
 			return

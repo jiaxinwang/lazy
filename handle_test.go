@@ -35,7 +35,7 @@ func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
 			Model:     &Dog{},
 			Results:   []interface{}{},
 			NeedCount: true,
-			Action:    []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultGetAction}},
+			Action:    []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultGetAction}},
 		}
 		c.Set(KeyConfig, &config)
 		return
@@ -56,7 +56,7 @@ func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
 		config := Configuration{
 			DB:     gormDB,
 			Model:  &Dog{},
-			Action: []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultPostAction}},
+			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultPostAction}},
 		}
 		c.Set(KeyConfig, &config)
 		return
@@ -65,7 +65,7 @@ func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
 		config := Configuration{
 			DB:     gormDB,
 			Model:  &Dog{},
-			Action: []ActionConfiguration{{DB: gormDB, Model: &Dog{}, Action: DefaultPatchAction}},
+			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultPatchAction}},
 		}
 		c.Set(KeyConfig, &config)
 		return
@@ -90,7 +90,7 @@ func TestDefaultHTTPActionMiddleware(t *testing.T) {
 				Model:     &Dog{},
 				Results:   []interface{}{},
 				NeedCount: true,
-				Action:    []ActionConfiguration{{DB: gormDB, Payload: payload, Action: DefaultHTTPRequestAction}},
+				Action:    []Action{{DB: gormDB, Payload: payload, Action: DefaultHTTPRequestAction}},
 			}
 			c.Set(KeyConfig, &config)
 			return

@@ -23,7 +23,7 @@ func PatchHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 }
 
 // DefaultPatchAction ...
-func DefaultPatchAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+func DefaultPatchAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	id := c.Param("id")
 	logrus.WithField("id", id).Info()
 	// c.Params

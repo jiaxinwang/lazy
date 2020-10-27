@@ -9,7 +9,7 @@ import (
 )
 
 // DefaultNetworkAction ...
-func DefaultNetworkAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+func DefaultNetworkAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	payloadSet := payload.(map[string]interface{})
 	method := payloadSet["_method"].(string)
 	url := payloadSet["_url"].(string)

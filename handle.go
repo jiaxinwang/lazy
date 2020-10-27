@@ -55,7 +55,7 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 }
 
 // DefaultPostAction execute default post.
-func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+func DefaultPostAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	_, _, bodyParams := ContentParams(c)
 	var config *Configuration
 	if v, ok := c.Get(KeyConfig); ok {
@@ -201,7 +201,7 @@ func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 }
 
 // DefaultGetAction execute actions and returns response
-func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	var config *Configuration
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
@@ -267,7 +267,7 @@ func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload
 }
 
 // DefaultHTTPRequestAction ...
-func DefaultHTTPRequestAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+func DefaultHTTPRequestAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	requestConfig := actionConfig.Payload.(*HTTPRequest)
 	logrus.Printf("%+v", requestConfig)
 	var resp *grequests.Response

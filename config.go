@@ -13,14 +13,14 @@ type Configuration struct {
 	Model   interface{}
 	Results []interface{}
 	// TODO: remove it
-	BeforeAction       *ActionConfiguration
-	AfterAction        *ActionConfiguration
+	BeforeAction       *Action
+	AfterAction        *Action
 	IgnoreAssociations bool
 	NeedCount          bool
-	Action             []ActionConfiguration
+	Action             []Action
 	// TODO: remove it
-	Before []ActionConfiguration
-	After  []ActionConfiguration
+	Before []Action
+	After  []Action
 }
 
 // JSONPathMap ...
@@ -31,8 +31,8 @@ type JSONPathMap struct {
 	Remove  bool
 }
 
-// ActionConfiguration configs action, before-action, after-action values and actions
-type ActionConfiguration struct {
+// Action ...
+type Action struct {
 	DB                 *gorm.DB
 	Table              string
 	Columms            string
@@ -44,7 +44,7 @@ type ActionConfiguration struct {
 	IgnoreAssociations bool
 	NeedCount          bool
 	Payload            interface{}
-	Action             func(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error)
+	Action             func(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error)
 }
 
 // HTTPRequest ...
