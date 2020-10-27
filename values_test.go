@@ -3,8 +3,6 @@ package lazy
 import (
 	"testing"
 
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )

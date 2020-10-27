@@ -44,11 +44,11 @@ func TestDefaultPostAction(t *testing.T) {
 			dog.Foods = []Food{}
 		}
 		dbDog := Dog{}
-		if err = gormDB.Where("name = ?", dog.Name).Find(&dbDog).Error; err != nil {
+		if err = gormDB.Where("name = ?", dog.Name).Preload("Foods").Find(&dbDog).Error; err != nil {
 			t.Errorf("db find dog = %v", err)
 			return
 		}
-		gormDB.Model(&dbDog).Related(&dbDog.Foods, "Foods")
+		// gormDB.Model(&dbDog).Preload("Foods")
 
 		if !cmp.Equal(
 			dog,
@@ -109,11 +109,11 @@ func TestPostAction(t *testing.T) {
 				dog.Foods = []Food{}
 			}
 			dbDog := Dog{}
-			if err = gormDB.Where("name = ?", dog.Name).Find(&dbDog).Error; err != nil {
+			if err = gormDB.Where("name = ?", dog.Name).Preload("Foods").Find(&dbDog).Error; err != nil {
 				t.Errorf("db find dog = %v", err)
 				return
 			}
-			gormDB.Model(&dbDog).Related(&dbDog.Foods, "Foods")
+			// gormDB.Model(&dbDog).Related(&dbDog.Foods, "Foods")
 
 			if !cmp.Equal(
 				dog,

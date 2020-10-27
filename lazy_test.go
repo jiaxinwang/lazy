@@ -2,6 +2,7 @@ package lazy
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"runtime"
@@ -10,8 +11,10 @@ import (
 	"time"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
-	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type Response struct {
@@ -103,7 +106,18 @@ func TestMain(m *testing.M) {
 func initTestDB() {
 	var err error
 	os.Remove("./test.db")
-	gormDB, err = gorm.Open("sqlite3", "./test.db")
+
+	gormDB, err = gorm.Open(sqlite.Open("./test.db"), &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags),
+			logger.Config{
+				SlowThreshold: time.Second,
+				LogLevel:      logger.Info,
+				// LogLevel: logger.Silent,
+				Colorful: true,
+			},
+		),
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -150,12 +164,13 @@ func initTestDB() {
 	dog := &Dog{Name: "Charlie", OwnerID: 1, BreedID: 1}
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
-	gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
+	// gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
+	gormDB.Model(dog).Association("Toys").Append(&Toy{Name: `Tug`}, &Toy{Name: `Toss`})
 
 	dog = &Dog{Name: "Max", OwnerID: 2, BreedID: 2}
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
-	gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
+	gormDB.Model(dog).Association("Toys").Append(&Toy{Name: `Tug`, DogID: dog.ID}, &Toy{Name: `Toss`, DogID: dog.ID})
 
 	dog = &Dog{Name: "Buddy", OwnerID: 3, BreedID: 3}
 	gormDB.Create(dog)
@@ -209,6 +224,7 @@ func setup() {
 }
 
 func teardown() {
-	gormDB.Close()
+	d, _ := gormDB.DB()
+	d.Close()
 	os.Remove("./test.db")
 }

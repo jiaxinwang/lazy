@@ -9,8 +9,6 @@ import (
 	"github.com/antchfx/jsonquery"
 	"github.com/levigross/grequests"
 
-	"gorm.io/gorm/schema"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -32,24 +30,26 @@ func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
 		return nil, ErrConfigurationMissing
 	}
 
-	if !config.IgnoreAssociations {
-		sfs := config.DB.NewScope(config.Model).GetStructFields()
-		for _, v := range sfs {
-			if v.Relationship != nil {
-				r := v.Relationship
-				switch r.Kind {
-				case string(schema.HasOne), string(schema.Many2Many):
-					return nil, ErrUnknown
-				case string(schema.HasMany):
-					count := 0
-					config.DB.Table(v.DBName).Where(fmt.Sprintf("%s = ?", r.ForeignDBNames[0]), id).Count(&count)
-					if count > 0 {
-						return nil, ErrHasAssociations
-					}
-				}
-			}
-		}
-	}
+	// TODO: associations
+
+	// if !config.IgnoreAssociations {
+	// 	sfs := config.DB.NewScope(config.Model).GetStructFields()
+	// 	for _, v := range sfs {
+	// 		if v.Relationship != nil {
+	// 			r := v.Relationship
+	// 			switch r.Kind {
+	// 			case string(schema.HasOne), string(schema.Many2Many):
+	// 				return nil, ErrUnknown
+	// 			case string(schema.HasMany):
+	// 				count := 0
+	// 				config.DB.Table(v.DBName).Where(fmt.Sprintf("%s = ?", r.ForeignDBNames[0]), id).Count(&count)
+	// 				if count > 0 {
+	// 					return nil, ErrHasAssociations
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	return nil, config.DB.Where(`id = ?`, id).Delete(config.Model).Error
 }
@@ -237,7 +237,6 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		tmp := clone(config.Model)
 		associateModel(config.DB, tmp)
 		// TODO: batch
-
 		config.Results = append(config.Results, tmp)
 	}
 

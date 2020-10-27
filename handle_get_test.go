@@ -19,8 +19,16 @@ func TestDefaultGetAction(t *testing.T) {
 
 	q := req.URL.Query()
 	q.Add("id", `1`)
-	q.Add("id", `2`)
+	// q.Add("id", `2`)
 	req.URL.RawQuery = q.Encode()
+
+	// dds, _ := newStructSlice("Dog")
+	// gormDB.Model(&Dog{}).Where("id = 1").Find(&dds)
+	// logrus.Print(dds)
+
+	var dog1 Dog
+	gormDB.Where("id = 1").Preload("Toys").Find(&dog1)
+	logrus.Printf("%#v", dog1)
 
 	r.ServeHTTP(w, req)
 	response := Response{}
@@ -31,18 +39,16 @@ func TestDefaultGetAction(t *testing.T) {
 	var ret Ret
 	MapStruct(response.Data.(map[string]interface{}), &ret)
 
-	assert.Equal(t, 2, ret.Count)
-	assert.Equal(t, 2, len(ret.Items))
+	// assert.Equal(t, 2, ret.Count)
+	// assert.Equal(t, 2, len(ret.Items))
 
 	assert.Equal(t, ret.Items[0].ID, uint(1))
-	assert.Equal(t, ret.Items[1].ID, uint(2))
+	// assert.Equal(t, ret.Items[1].ID, uint(2))
 
 	assert.Equal(t, len(ret.Items[0].Toys), 2)
-	assert.Equal(t, len(ret.Items[1].Toys), 2)
+	// assert.Equal(t, len(ret.Items[1].Toys), 2)
 
-	var dog1 Dog
-	gormDB.Where("id = 1").Find(&dog1)
-	gormDB.Model(&dog1).Related(&(dog1.Toys))
+	// gormDB.Model(&dog1).Related(&(dog1.Toys))
 
 	// logrus.Printf("%+v", ret)
 

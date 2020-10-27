@@ -23,5 +23,6 @@ require (
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/sys v0.0.0-20201017003518-b09fb700fbb7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	gorm.io/gorm v0.2.24
+	gorm.io/driver/sqlite v1.1.3
+	gorm.io/gorm v1.20.5
 )

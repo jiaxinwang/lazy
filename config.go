@@ -2,7 +2,7 @@ package lazy
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // Configuration configs lazy values and actions

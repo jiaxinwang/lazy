@@ -12,8 +12,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/adam-hanna/arrayOperations"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"github.com/mitchellh/mapstructure"
+	"gorm.io/gorm"
 )
 
 // LazyTagSlice ...
