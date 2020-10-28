@@ -30,15 +30,28 @@ func associateModel(db *gorm.DB, model interface{}) (err error) {
 			tableName := schema.NamingStrategy{}.TableName(part[len(part)-1])
 
 			// TODO: err
-			primaryValue, _ := valueOfField(model, v.References[0].PrimaryKey.Name)
+			primaryValue, err := valueOfField(model, v.References[0].PrimaryKey.Name)
+			if err != nil {
+				return fmt.Errorf("associate model %v: %w", model, err)
+			}
 			var results []map[string]interface{}
 			db.Table(tableName).Where(fmt.Sprintf("%s = ?", v.References[0].ForeignKey.DBName), primaryValue).Find(&results)
 			set := make([]interface{}, 0)
 			for _, vv := range results {
-				f, _ := newStruct(part[len(part)-1])
-				str, _ := json.MarshalToString(vv)
+				f, ok := newStruct(part[len(part)-1])
+				if !ok {
+					return fmt.Errorf("associate model new struct %v %v", model, part[len(part)-1])
+				}
+				str, err := json.MarshalToString(vv)
+				if err != nil {
+					return fmt.Errorf("associate model marshal to string %v: %w", model, err)
+				}
 
-				json.UnmarshalFromString(str, &f)
+				err = json.UnmarshalFromString(str, &f)
+				if err != nil {
+					return fmt.Errorf("associate model unmarshal from string %v: %w", model, err)
+				}
+
 				set = append(set, f)
 			}
 			// TODO:
