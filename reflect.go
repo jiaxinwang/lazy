@@ -10,6 +10,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/sirupsen/logrus"
 )
 
 var cacheStore *sync.Map
@@ -338,4 +339,33 @@ func foreignOfModel(inter interface{}) [][4]string {
 	}
 
 	return ret
+}
+
+func assemble(self []interface{}, foreign []map[string]interface{}, primaryKeyName, foreignKeyName string) ([]interface{}, error) {
+	logrus.WithField("primaryKeyName", primaryKeyName).WithField("foreignKeyName", foreignKeyName).Info()
+	ret := make([]interface{}, len(self))
+	for k, v := range self {
+		value, err := valueOfField(v, primaryKeyName)
+		if err != nil {
+			return nil, err
+		}
+		// logrus.Print(k)
+
+		for kk, vv := range foreign {
+			if vvv, ok := vv[foreignKeyName]; ok {
+				logrus.WithFields(logrus.Fields{
+					"k":                     k,
+					"kk":                    kk,
+					"vvv":                   vvv,
+					"value":                 value,
+					"eq":                    reflect.DeepEqual(vvv, value),
+					"eq1":                   vvv == value,
+					"bbb":                   reflect.TypeOf(vvv) == reflect.TypeOf(value),
+					"reflect.TypeOf(vvv)":   reflect.TypeOf(vvv),
+					"reflect.TypeOf(value)": reflect.TypeOf(value),
+				}).Info()
+			}
+		}
+	}
+	return ret, nil
 }

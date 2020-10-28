@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/antchfx/jsonquery"
 	"github.com/levigross/grequests"
+	"gorm.io/gorm/schema"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-gonic/gin"
@@ -227,6 +229,10 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	if err != nil {
 		return nil, err
 	}
+	modelSchema, err := schema.Parse(config.Model, &sync.Map{}, schema.NamingStrategy{})
+	if err != nil {
+		return nil, err
+	}
 
 	eq, gt, lt, gte, lte := URLValues(config.Model, params)
 
@@ -240,7 +246,7 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	}
 
 	for k, v := range eq {
-		tx = tx.Where(fmt.Sprintf("%s = ?", k), v)
+		tx = tx.Where(fmt.Sprintf("%s IN ?", k), v)
 	}
 	for k, v := range gt {
 		tx = tx.Where(fmt.Sprintf("%s > ?", k), v)
@@ -257,6 +263,11 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 
 	tx.Limit(int(limit)).Offset(int(limit*page + offset)).Find(&mapResults)
 
+	count := int64(len(mapResults))
+	if config.NeedCount {
+		tx.Count(&count)
+	}
+
 	modelResults := make([]interface{}, len(mapResults))
 	for k, v := range mapResults {
 		if err := MapStruct(v, config.Model); err != nil {
@@ -265,35 +276,49 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		tmp := clone(config.Model)
 		modelResults[k] = tmp
 	}
-	logrus.WithField("results", mapResults).Debug()
-	logrus.WithField("tttResult", modelResults).Debug()
 	for k, v := range modelResults {
-		logrus.WithField("k", k).Printf("%#v", v)
+		logrus.WithField("kk", k).Printf("%#v", v)
 	}
 
-	config.Results = modelResults
-	count := int64(len(modelResults))
+	for _, v := range relations.HasMany {
+		// logrus.WithField("here", 1).Printf("%#v", v)
+		// logrus.WithField("here", 2).Printf("%#v", v.Field)
+		// logrus.WithField("here", 3).Printf("%#v", v.FieldSchema.PrimaryFieldDBNames)
+		// logrus.WithField("here", 4).Printf("%#v", v.Schema.PrimaryFields[0].Name)
+		primaryFieldValues := make([]interface{}, len(modelResults))
 
-	if config.NeedCount {
-		sel := sq.Select(`count(1) as c`).From(config.Table)
-		sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
-		data, err = ExecSelect(config.DB, sel)
-		if err != nil {
-			return
+		if len(modelSchema.PrimaryFields) <= 0 {
+			return nil, fmt.Errorf("primary fields not found")
 		}
-		if len(data) == 1 {
-			iter, _ := data[0][`c`]
-			count, err = strconv.ParseInt(fmt.Sprintf("%v", iter), 10, 64)
+		primaryFieldName := modelSchema.PrimaryFields[0].Name
+
+		for k, v := range modelResults {
+			primaryFieldValue, err := valueOfField(v, primaryFieldName)
 			if err != nil {
-				return
+				return nil, err
 			}
+			logrus.WithField("k", 3).WithField("primaryFieldValue", primaryFieldValue).Print()
+			primaryFieldValues[k] = primaryFieldValue
 		}
+		logrus.Printf("%#v", primaryFieldValues)
+		var hasManyResults []map[string]interface{}
+		config.DB.Table(v.References[0].ForeignKey.Schema.Table).Where(fmt.Sprintf("%s IN ?", v.References[0].ForeignKey.DBName), primaryFieldValues).Find(&hasManyResults)
+		logrus.Printf("%#v", hasManyResults)
+		assemble(modelResults, hasManyResults, v.FieldSchema.PrimaryFields[0].Name, v.References[0].ForeignKey.DBName)
 	}
-	// logrus.WithField("count", count).Info()
+
+	// for _, v := range relations.Many2Many {
+	// 	logrus.WithField("relations.Many2Many.Name", v.Name).Infof("%#v", v)
+	// 	var m2mResults []map[string]interface{}
+	// 	config.DB.Table("users").Find(&m2mResults)
+	// }
+
+	logrus.WithField("count", count).Info()
+	config.Results = modelResults
+
 	c.Set(keyCount, count)
 	c.Set(keyData, config.Results)
 	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
-	// logrus.WithField("config.Results", config.Results).Info()
 	return
 }
 
