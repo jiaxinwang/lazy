@@ -45,16 +45,11 @@ func TestMiddlewareDefaultHandlerPOST(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/dogs", bytes.NewReader([]byte(body)))
 
 	r.ServeHTTP(w, req)
-	logrus.WithField("w.Body.String()", w.Body.String()).Debug()
 	response := Response{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	if err != nil {
 		logrus.WithError(err).Debug()
 	}
-	logrus.WithField("response", response).WithError(err).Debug()
 	assert.Equal(t, 200, w.Code)
 	assert.NoError(t, err)
-
-	logrus.WithField("response", response).Info()
-
 }

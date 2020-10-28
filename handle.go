@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/antchfx/jsonquery"
 	"github.com/levigross/grequests"
+	"gorm.io/gorm/schema"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-gonic/gin"
@@ -221,77 +223,119 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		limit = 10000
 	}
 
-	var results []map[string]interface{}
-	// config.DB.Model(config.Model).Find(&results)
+	var mapResults []map[string]interface{}
 
 	relations, err := relationships(config.DB, config.Model)
 	if err != nil {
 		return nil, err
 	}
-
-	tx := config.DB.Model(config.Model)
-	preloads := []string{}
-	for _, v := range relations.HasMany {
-		// logrus.Print(v.Name)
-		preloads = append(preloads, v.Name)
-		// tx = tx.Preload(v.Name)
+	modelSchema, err := schema.Parse(config.Model, &sync.Map{}, schema.NamingStrategy{})
+	if err != nil {
+		return nil, err
 	}
-	for _, v := range relations.Many2Many {
-		preloads = append(preloads, v.Name)
-		// logrus.Print(v.Name)
-		// tx = tx.Preload(v.Name)
-	}
-	// tx.Find(&results)
-	// tx.Preload("Foods").Find(&results)
-	// err1 := tx.Association("Foods").Find(&results)
-	// logrus.WithError(err1).Error()
-	tx.Find(&results)
-
-	logrus.WithField("results", results).Debug()
 
 	eq, gt, lt, gte, lte := URLValues(config.Model, params)
 
-	sel := sq.Select(config.Columms).From(config.Table).Limit(limit).Offset(limit*page + offset)
-	sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
-	data, err = ExecSelect(config.DB, sel)
-	if err != nil {
-		return
+	tx := config.DB.Model(config.Model)
+
+	for k, v := range eq {
+		tx = tx.Where(fmt.Sprintf("%s IN ?", k), v)
+	}
+	for k, v := range gt {
+		tx = tx.Where(fmt.Sprintf("%s > ?", k), v)
+	}
+	for k, v := range lt {
+		tx = tx.Where(fmt.Sprintf("%s < ?", k), v)
+	}
+	for k, v := range gte {
+		tx = tx.Where(fmt.Sprintf("%s >= ?", k), v)
+	}
+	for k, v := range lte {
+		tx = tx.Where(fmt.Sprintf("%s <= ?", k), v)
 	}
 
-	for _, v := range data {
+	tx.Limit(int(limit)).Offset(int(limit*page + offset)).Find(&mapResults)
+
+	count := int64(len(mapResults))
+	if config.NeedCount {
+		tx.Count(&count)
+	}
+
+	modelResults := make([]interface{}, len(mapResults))
+	for k, v := range mapResults {
 		if err := MapStruct(v, config.Model); err != nil {
 			return nil, err
 		}
 		tmp := clone(config.Model)
-
-		// FIXME:
-		// associateModel(config.DB, tmp)
-		// TODO: batch
-		config.Results = append(config.Results, tmp)
+		modelResults[k] = tmp
 	}
 
-	count := int64(len(data))
-
-	if config.NeedCount {
-		sel := sq.Select(`count(1) as c`).From(config.Table)
-		sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
-		data, err = ExecSelect(config.DB, sel)
-		if err != nil {
-			return
+	for _, vM2MRelation := range relations.Many2Many {
+		primaryFieldValues := make([]interface{}, len(modelResults))
+		if len(modelSchema.PrimaryFields) <= 0 {
+			return nil, fmt.Errorf("primary fields not found")
 		}
-		if len(data) == 1 {
-			iter, _ := data[0][`c`]
-			count, err = strconv.ParseInt(fmt.Sprintf("%v", iter), 10, 64)
+		primaryFieldName := modelSchema.PrimaryFields[0].Name
+		for kModelResults, vModelResults := range modelResults {
+			primaryFieldValue, err := valueOfField(vModelResults, primaryFieldName)
 			if err != nil {
-				return
+				return nil, err
+			}
+			primaryFieldValues[kModelResults] = primaryFieldValue
+		}
+
+		var joinTableResults []map[string]interface{}
+		config.DB.Table(vM2MRelation.JoinTable.Table).Where(fmt.Sprintf("%s IN ?", vM2MRelation.JoinTable.DBNames[0]), primaryFieldValues).Find(&joinTableResults)
+
+		mapForeignFieldValues := make(map[interface{}]bool)
+		for _, vv := range joinTableResults {
+			if value, ok := vv[vM2MRelation.JoinTable.DBNames[0]]; ok {
+				mapForeignFieldValues[value] = true
 			}
 		}
+		foreignFieldValues := make([]interface{}, 0)
+		for k := range mapForeignFieldValues {
+			foreignFieldValues = append(foreignFieldValues, k)
+		}
+
+		var foreignTableResults []map[string]interface{}
+		config.DB.Table(vM2MRelation.FieldSchema.Table).Where(fmt.Sprintf("%s IN ?", vM2MRelation.FieldSchema.PrimaryFields[0].DBName), foreignFieldValues).Find(&foreignTableResults)
+
+		assembleMany2Many(modelResults, joinTableResults, foreignTableResults,
+			vM2MRelation.Schema.PrimaryFields[0].Name, vM2MRelation.FieldSchema.PrimaryFields[0].DBName,
+			vM2MRelation.JoinTable.DBNames[0], vM2MRelation.JoinTable.DBNames[1],
+			vM2MRelation.Field.StructField.Tag.Get("json"))
+
 	}
-	// logrus.WithField("count", count).Info()
+
+	for _, vHasManyRelation := range relations.HasMany {
+		primaryFieldValues := make([]interface{}, len(modelResults))
+
+		if len(modelSchema.PrimaryFields) <= 0 {
+			return nil, fmt.Errorf("primary fields not found")
+		}
+		primaryFieldName := modelSchema.PrimaryFields[0].Name
+
+		for k, v := range modelResults {
+			primaryFieldValue, err := valueOfField(v, primaryFieldName)
+			if err != nil {
+				return nil, err
+			}
+			primaryFieldValues[k] = primaryFieldValue
+		}
+		var hasManyResults []map[string]interface{}
+		config.DB.Table(vHasManyRelation.References[0].ForeignKey.Schema.Table).Where(fmt.Sprintf("%s IN ?", vHasManyRelation.References[0].ForeignKey.DBName), primaryFieldValues).Find(&hasManyResults)
+
+		assembleHasMany(modelResults, hasManyResults,
+			vHasManyRelation.FieldSchema.PrimaryFields[0].Name, vHasManyRelation.References[0].ForeignKey.DBName,
+			vHasManyRelation.Field.StructField.Tag.Get("json"))
+	}
+
+	logrus.WithField("count", count).Info()
+	config.Results = modelResults
 	c.Set(keyCount, count)
 	c.Set(keyData, config.Results)
 	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
-	// logrus.WithField("config.Results", config.Results).Info()
 	return
 }
 

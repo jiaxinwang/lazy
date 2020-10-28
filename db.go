@@ -43,6 +43,8 @@ func associateModel(db *gorm.DB, model interface{}) (err error) {
 		logrus.Infof("3 %#v", v.References[0].ForeignKey)
 		logrus.Infof("4 %#v", v.References[0].PrimaryValue)
 		logrus.Infof("5 %#v", v.References[0].PrimaryKey)
+		logrus.Infof("6 %#v", v.Field.Name)
+
 		// logrus.Print(schema.NamingStrategy{}.ColumnName("Foods", "ID"))
 
 		joined := strings.Join([]string{m.Name, v.Name}, "")

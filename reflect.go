@@ -10,6 +10,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/sirupsen/logrus"
 )
 
 var cacheStore *sync.Map
@@ -338,4 +339,139 @@ func foreignOfModel(inter interface{}) [][4]string {
 	}
 
 	return ret
+}
+
+func equalBuiltinInterface(a, b interface{}) bool {
+	v1, err := builtinValue(a)
+	if err != nil {
+		return false
+	}
+	v2, err := builtinValue(b)
+	if err != nil {
+		return false
+	}
+	return reflect.DeepEqual(v1, v2)
+
+}
+
+func assembleMany2Many(self []interface{}, join, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, joinPrimaryKeyName, joinForeignKeyName, expJSONName string) ([]interface{}, error) {
+	ret := make([]interface{}, len(self))
+	for _, vSelf := range self {
+		exp := make([]interface{}, 0)
+		vPrimary, err := valueOfField(vSelf, primaryKeyName)
+		if err != nil {
+			return nil, err
+		}
+		for _, vJoin := range join {
+			if vJoinPrimary, ok := vJoin[joinPrimaryKeyName]; ok {
+				if equalBuiltinInterface(vPrimary, vJoinPrimary) {
+					joinFKeyValue := vJoin[joinForeignKeyName]
+					for _, vForeign := range foreign {
+						if fKeyValue, ok := vForeign[foreignKeyName]; ok {
+							if equalBuiltinInterface(fKeyValue, joinFKeyValue) {
+								exp = append(exp, vForeign)
+							}
+						}
+					}
+				}
+			}
+		}
+		if err := setFieldWithJSONString(vSelf, expJSONName, exp); err != nil {
+			logrus.WithError(err).Error()
+			return ret, err
+		}
+	}
+	return ret, nil
+}
+
+func assembleHasMany(self []interface{}, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, expJSONName string) ([]interface{}, error) {
+	ret := make([]interface{}, len(self))
+	for _, vSelf := range self {
+		exp := make([]interface{}, 0)
+		value, err := valueOfField(vSelf, primaryKeyName)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, vForeign := range foreign {
+			if sameKeyValue, ok := vForeign[foreignKeyName]; ok {
+				v1, err := builtinValue(sameKeyValue)
+				if err != nil {
+					return nil, err
+				}
+				v2, err := builtinValue(value)
+				if err != nil {
+					return nil, err
+				}
+				if reflect.DeepEqual(v1, v2) {
+					exp = append(exp, vForeign)
+				}
+			}
+		}
+
+		if err := setFieldWithJSONString(vSelf, expJSONName, exp); err != nil {
+			logrus.WithError(err).Error()
+			return ret, err
+		}
+	}
+	return ret, nil
+}
+
+func builtinValue(i interface{}) (o interface{}, err error) {
+
+	value := reflect.ValueOf(i)
+
+	switch value.Kind() {
+	// case reflect.Int64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
+	// 	o = int64(i.())
+	// 	return
+	// case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	// 	o = i.(uint64)
+	// 	return
+	// case reflect.Uintptr:
+	// 	// TODO:
+	// 	return nil, fmt.Errorf("unsupported")
+
+	case reflect.Uint:
+		o = uint(i.(uint))
+		return o, nil
+	case reflect.Uint64:
+		o = uint(i.(uint64))
+		return o, nil
+	case reflect.Uint32:
+		o = uint(i.(uint32))
+		return o, nil
+	case reflect.Uint16:
+		o = uint(i.(uint16))
+		return o, nil
+	case reflect.Uint8:
+		o = uint(i.(uint8))
+		return o, nil
+	case reflect.Int:
+		o = uint(i.(int))
+		return o, nil
+	case reflect.Int64:
+		o = uint(i.(int64))
+		return o, nil
+	case reflect.Int32:
+		o = uint(i.(int32))
+		return o, nil
+	case reflect.Int16:
+		o = uint(i.(int16))
+		return o, nil
+	case reflect.Int8:
+		o = uint(i.(int8))
+		return o, nil
+	case reflect.String:
+		o = i.(string)
+		return o, nil
+	case reflect.Bool:
+		// if kv, err := strconv.ParseBool(v); err == nil {
+		// 	ret = kv
+		// }
+		return nil, fmt.Errorf("unsupported")
+	default:
+		// TODO:
+		return nil, fmt.Errorf("unsupported")
+	}
 }
