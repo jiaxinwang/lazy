@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/tidwall/sjson"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
@@ -20,16 +20,76 @@ func updateModel(db *gorm.DB, model interface{}) (err error) {
 	return nil
 }
 
+func relationships(db *gorm.DB, model interface{}) (relationships schema.Relationships, err error) {
+	m, err := schema.Parse(model, &sync.Map{}, schema.NamingStrategy{})
+	if err != nil {
+		return schema.Relationships{}, err
+	}
+
+	return m.Relationships, nil
+}
+
 func associateModel(db *gorm.DB, model interface{}) (err error) {
 	m, err := schema.Parse(model, &sync.Map{}, schema.NamingStrategy{})
 	if err != nil {
 		return err
 	}
+	// for _, v := range m.Relationships.BelongsTo {
+	// 	logrus.Infof("%#v", v)
+	// }
+	for _, v := range m.Relationships.Many2Many {
+		logrus.Infof("1 %#v", v)
+		logrus.Infof("2 %#v", v.References[0])
+		logrus.Infof("3 %#v", v.References[0].ForeignKey)
+		logrus.Infof("4 %#v", v.References[0].PrimaryValue)
+		logrus.Infof("5 %#v", v.References[0].PrimaryKey)
+		// logrus.Print(schema.NamingStrategy{}.ColumnName("Foods", "ID"))
+
+		joined := strings.Join([]string{m.Name, v.Name}, "")
+		tableName := schema.NamingStrategy{}.TableName(joined)
+		logrus.Print(tableName)
+
+		// if part := strings.Split(v.Field.StructField.Type.Elem().String(), `.`); len(part) > 0 {
+		// joined := strings.Join([]string{v.Name}, ".")
+		// tableName := schema.NamingStrategy{}.TableName(part[len(part)-1])
+		// tableName := schema.NamingStrategy{}.TableName(joined)
+		// logrus.Print(tableName)
+		primaryValue, err := valueOfField(model, v.References[0].PrimaryKey.Name)
+		if err != nil {
+			return fmt.Errorf("associate model %v: %w", model, err)
+		}
+		var results []map[string]interface{}
+		db.Table(tableName).Where(fmt.Sprintf("%s = ?", v.References[0].ForeignKey.DBName), primaryValue).Find(&results)
+		logrus.Print(results)
+		// set := make([]interface{}, 0)
+		// for _, vv := range results {
+		// 	f, ok := NewStruct(part[len(part)-1])
+		// 	if !ok {
+		// 		return fmt.Errorf("associate model new struct %v %v", model, part[len(part)-1])
+		// 	}
+		// 	str, err := json.MarshalToString(vv)
+		// 	if err != nil {
+		// 		return fmt.Errorf("associate model marshal to string %v: %w", model, err)
+		// 	}
+
+		// 	err = json.UnmarshalFromString(str, &f)
+		// 	if err != nil {
+		// 		return fmt.Errorf("associate model unmarshal from string %v: %w", model, err)
+		// 	}
+
+		// 	set = append(set, f)
+		// }
+		// err = setFieldWithJSONString(model, v.Field.StructField.Tag.Get("json"), set)
+		// if err != nil {
+		// 	return fmt.Errorf("associate model set field by json %v (%s): %w", model, v.Field.StructField.Tag.Get("json"), err)
+		// }
+		// }
+
+	}
 	for _, v := range m.Relationships.HasMany {
 		if part := strings.Split(v.Field.StructField.Type.Elem().String(), `.`); len(part) > 0 {
 			tableName := schema.NamingStrategy{}.TableName(part[len(part)-1])
 
-			// TODO: err
 			primaryValue, err := valueOfField(model, v.References[0].PrimaryKey.Name)
 			if err != nil {
 				return fmt.Errorf("associate model %v: %w", model, err)
@@ -38,7 +98,7 @@ func associateModel(db *gorm.DB, model interface{}) (err error) {
 			db.Table(tableName).Where(fmt.Sprintf("%s = ?", v.References[0].ForeignKey.DBName), primaryValue).Find(&results)
 			set := make([]interface{}, 0)
 			for _, vv := range results {
-				f, ok := newStruct(part[len(part)-1])
+				f, ok := NewStruct(part[len(part)-1])
 				if !ok {
 					return fmt.Errorf("associate model new struct %v %v", model, part[len(part)-1])
 				}
@@ -54,10 +114,11 @@ func associateModel(db *gorm.DB, model interface{}) (err error) {
 
 				set = append(set, f)
 			}
-			// TODO:
-			modelStr, _ := json.MarshalToString(model)
-			newModelStr, _ := sjson.Set(modelStr, v.Field.StructField.Tag.Get("json"), set)
-			json.UnmarshalFromString(newModelStr, model)
+			err = setFieldWithJSONString(model, v.Field.StructField.Tag.Get("json"), set)
+			if err != nil {
+				return fmt.Errorf("associate model set field by json %v (%s): %w", model, v.Field.StructField.Tag.Get("json"), err)
+			}
+
 		}
 	}
 

@@ -221,6 +221,34 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		limit = 10000
 	}
 
+	var results []map[string]interface{}
+	// config.DB.Model(config.Model).Find(&results)
+
+	relations, err := relationships(config.DB, config.Model)
+	if err != nil {
+		return nil, err
+	}
+
+	tx := config.DB.Model(config.Model)
+	preloads := []string{}
+	for _, v := range relations.HasMany {
+		// logrus.Print(v.Name)
+		preloads = append(preloads, v.Name)
+		// tx = tx.Preload(v.Name)
+	}
+	for _, v := range relations.Many2Many {
+		preloads = append(preloads, v.Name)
+		// logrus.Print(v.Name)
+		// tx = tx.Preload(v.Name)
+	}
+	// tx.Find(&results)
+	// tx.Preload("Foods").Find(&results)
+	// err1 := tx.Association("Foods").Find(&results)
+	// logrus.WithError(err1).Error()
+	tx.Find(&results)
+
+	logrus.WithField("results", results).Debug()
+
 	eq, gt, lt, gte, lte := URLValues(config.Model, params)
 
 	sel := sq.Select(config.Columms).From(config.Table).Limit(limit).Offset(limit*page + offset)
@@ -235,7 +263,9 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 			return nil, err
 		}
 		tmp := clone(config.Model)
-		associateModel(config.DB, tmp)
+
+		// FIXME:
+		// associateModel(config.DB, tmp)
 		// TODO: batch
 		config.Results = append(config.Results, tmp)
 	}

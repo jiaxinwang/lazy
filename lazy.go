@@ -14,6 +14,7 @@ var (
 
 // LogMode enable log
 func LogMode(v bool) {
+	// TODO:
 	logMode = v
 }
 

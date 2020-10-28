@@ -49,7 +49,7 @@ func isNil(i interface{}) bool {
 	return false
 }
 
-func setJSONField(src interface{}, name string, v interface{}) error {
+func setFieldWithJSONString(src interface{}, name string, v interface{}) error {
 	byte1, err := json.Marshal(src)
 	if err != nil {
 		return err

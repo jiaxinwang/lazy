@@ -27,7 +27,7 @@ func TestDefaultGetAction(t *testing.T) {
 	// logrus.Print(dds)
 
 	var dog1 Dog
-	gormDB.Where("id = 1").Preload("Toys").Find(&dog1)
+	gormDB.Where("id = 1").Preload("Toys").Preload("Foods").Find(&dog1)
 	logrus.Printf("%#v", dog1)
 
 	r.ServeHTTP(w, req)

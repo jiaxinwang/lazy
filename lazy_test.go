@@ -118,13 +118,14 @@ func initTestDB() {
 			},
 		),
 	})
+
 	if err != nil {
 		panic(err)
 	}
 
 	gormDB.AutoMigrate(&Dog{}, &Profile{}, &Breed{}, &Toy{}, &Food{}, &Owner{})
 
-	register(&Dog{}, &Profile{}, &Breed{}, &Toy{}, &Food{}, &Owner{})
+	Register(&Dog{}, &Profile{}, &Breed{}, &Toy{}, &Food{}, &Owner{})
 
 	ownerNames := []string{
 		`Bowie`,
