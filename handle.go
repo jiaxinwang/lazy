@@ -270,10 +270,45 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		modelResults[k] = tmp
 	}
 
-	// for _, v := range relations.Many2Many {
-	// }
+	for _, vM2MRelation := range relations.Many2Many {
+		primaryFieldValues := make([]interface{}, len(modelResults))
+		if len(modelSchema.PrimaryFields) <= 0 {
+			return nil, fmt.Errorf("primary fields not found")
+		}
+		primaryFieldName := modelSchema.PrimaryFields[0].Name
+		for kModelResults, vModelResults := range modelResults {
+			primaryFieldValue, err := valueOfField(vModelResults, primaryFieldName)
+			if err != nil {
+				return nil, err
+			}
+			primaryFieldValues[kModelResults] = primaryFieldValue
+		}
 
-	for _, v := range relations.HasMany {
+		var joinTableResults []map[string]interface{}
+		config.DB.Table(vM2MRelation.JoinTable.Table).Where(fmt.Sprintf("%s IN ?", vM2MRelation.JoinTable.DBNames[0]), primaryFieldValues).Find(&joinTableResults)
+
+		mapForeignFieldValues := make(map[interface{}]bool)
+		for _, vv := range joinTableResults {
+			if value, ok := vv[vM2MRelation.JoinTable.DBNames[0]]; ok {
+				mapForeignFieldValues[value] = true
+			}
+		}
+		foreignFieldValues := make([]interface{}, 0)
+		for k := range mapForeignFieldValues {
+			foreignFieldValues = append(foreignFieldValues, k)
+		}
+
+		var foreignTableResults []map[string]interface{}
+		config.DB.Table(vM2MRelation.FieldSchema.Table).Where(fmt.Sprintf("%s IN ?", vM2MRelation.FieldSchema.PrimaryFields[0].DBName), foreignFieldValues).Find(&foreignTableResults)
+
+		assembleMany2Many(modelResults, joinTableResults, foreignTableResults,
+			vM2MRelation.Schema.PrimaryFields[0].Name, vM2MRelation.FieldSchema.PrimaryFields[0].DBName,
+			vM2MRelation.JoinTable.DBNames[0], vM2MRelation.JoinTable.DBNames[1],
+			vM2MRelation.Field.StructField.Tag.Get("json"))
+
+	}
+
+	for _, vHasManyRelation := range relations.HasMany {
 		primaryFieldValues := make([]interface{}, len(modelResults))
 
 		if len(modelSchema.PrimaryFields) <= 0 {
@@ -289,11 +324,11 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 			primaryFieldValues[k] = primaryFieldValue
 		}
 		var hasManyResults []map[string]interface{}
-		config.DB.Table(v.References[0].ForeignKey.Schema.Table).Where(fmt.Sprintf("%s IN ?", v.References[0].ForeignKey.DBName), primaryFieldValues).Find(&hasManyResults)
+		config.DB.Table(vHasManyRelation.References[0].ForeignKey.Schema.Table).Where(fmt.Sprintf("%s IN ?", vHasManyRelation.References[0].ForeignKey.DBName), primaryFieldValues).Find(&hasManyResults)
 
-		assemble(modelResults, hasManyResults,
-			v.FieldSchema.PrimaryFields[0].Name, v.References[0].ForeignKey.DBName,
-			v.Field.StructField.Tag.Get("json"))
+		assembleHasMany(modelResults, hasManyResults,
+			vHasManyRelation.FieldSchema.PrimaryFields[0].Name, vHasManyRelation.References[0].ForeignKey.DBName,
+			vHasManyRelation.Field.StructField.Tag.Get("json"))
 	}
 
 	logrus.WithField("count", count).Info()

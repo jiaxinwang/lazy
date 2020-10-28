@@ -341,7 +341,50 @@ func foreignOfModel(inter interface{}) [][4]string {
 	return ret
 }
 
-func assemble(self []interface{}, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, expJSONName string) ([]interface{}, error) {
+func equalBuiltinInterface(a, b interface{}) bool {
+	v1, err := builtinValue(a)
+	if err != nil {
+		return false
+	}
+	v2, err := builtinValue(b)
+	if err != nil {
+		return false
+	}
+	return reflect.DeepEqual(v1, v2)
+
+}
+
+func assembleMany2Many(self []interface{}, join, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, joinPrimaryKeyName, joinForeignKeyName, expJSONName string) ([]interface{}, error) {
+	ret := make([]interface{}, len(self))
+	for _, vSelf := range self {
+		exp := make([]interface{}, 0)
+		vPrimary, err := valueOfField(vSelf, primaryKeyName)
+		if err != nil {
+			return nil, err
+		}
+		for _, vJoin := range join {
+			if vJoinPrimary, ok := vJoin[joinPrimaryKeyName]; ok {
+				if equalBuiltinInterface(vPrimary, vJoinPrimary) {
+					joinFKeyValue := vJoin[joinForeignKeyName]
+					for _, vForeign := range foreign {
+						if fKeyValue, ok := vForeign[foreignKeyName]; ok {
+							if equalBuiltinInterface(fKeyValue, joinFKeyValue) {
+								exp = append(exp, vForeign)
+							}
+						}
+					}
+				}
+			}
+		}
+		if err := setFieldWithJSONString(vSelf, expJSONName, exp); err != nil {
+			logrus.WithError(err).Error()
+			return ret, err
+		}
+	}
+	return ret, nil
+}
+
+func assembleHasMany(self []interface{}, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, expJSONName string) ([]interface{}, error) {
 	ret := make([]interface{}, len(self))
 	for _, vSelf := range self {
 		exp := make([]interface{}, 0)
