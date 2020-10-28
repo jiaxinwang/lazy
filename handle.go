@@ -221,56 +221,58 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		limit = 10000
 	}
 
-	var results []map[string]interface{}
-	// config.DB.Model(config.Model).Find(&results)
+	var mapResults []map[string]interface{}
 
 	relations, err := relationships(config.DB, config.Model)
 	if err != nil {
 		return nil, err
 	}
 
+	eq, gt, lt, gte, lte := URLValues(config.Model, params)
+
 	tx := config.DB.Model(config.Model)
 	preloads := []string{}
 	for _, v := range relations.HasMany {
-		// logrus.Print(v.Name)
 		preloads = append(preloads, v.Name)
-		// tx = tx.Preload(v.Name)
 	}
 	for _, v := range relations.Many2Many {
 		preloads = append(preloads, v.Name)
-		// logrus.Print(v.Name)
-		// tx = tx.Preload(v.Name)
-	}
-	// tx.Find(&results)
-	// tx.Preload("Foods").Find(&results)
-	// err1 := tx.Association("Foods").Find(&results)
-	// logrus.WithError(err1).Error()
-	tx.Find(&results)
-
-	logrus.WithField("results", results).Debug()
-
-	eq, gt, lt, gte, lte := URLValues(config.Model, params)
-
-	sel := sq.Select(config.Columms).From(config.Table).Limit(limit).Offset(limit*page + offset)
-	sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
-	data, err = ExecSelect(config.DB, sel)
-	if err != nil {
-		return
 	}
 
-	for _, v := range data {
+	for k, v := range eq {
+		tx = tx.Where(fmt.Sprintf("%s = ?", k), v)
+	}
+	for k, v := range gt {
+		tx = tx.Where(fmt.Sprintf("%s > ?", k), v)
+	}
+	for k, v := range lt {
+		tx = tx.Where(fmt.Sprintf("%s < ?", k), v)
+	}
+	for k, v := range gte {
+		tx = tx.Where(fmt.Sprintf("%s >= ?", k), v)
+	}
+	for k, v := range lte {
+		tx = tx.Where(fmt.Sprintf("%s <= ?", k), v)
+	}
+
+	tx.Limit(int(limit)).Offset(int(limit*page + offset)).Find(&mapResults)
+
+	modelResults := make([]interface{}, len(mapResults))
+	for k, v := range mapResults {
 		if err := MapStruct(v, config.Model); err != nil {
 			return nil, err
 		}
 		tmp := clone(config.Model)
-
-		// FIXME:
-		// associateModel(config.DB, tmp)
-		// TODO: batch
-		config.Results = append(config.Results, tmp)
+		modelResults[k] = tmp
+	}
+	logrus.WithField("results", mapResults).Debug()
+	logrus.WithField("tttResult", modelResults).Debug()
+	for k, v := range modelResults {
+		logrus.WithField("k", k).Printf("%#v", v)
 	}
 
-	count := int64(len(data))
+	config.Results = modelResults
+	count := int64(len(modelResults))
 
 	if config.NeedCount {
 		sel := sq.Select(`count(1) as c`).From(config.Table)
