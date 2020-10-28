@@ -341,31 +341,94 @@ func foreignOfModel(inter interface{}) [][4]string {
 	return ret
 }
 
-func assemble(self []interface{}, foreign []map[string]interface{}, primaryKeyName, foreignKeyName string) ([]interface{}, error) {
-	logrus.WithField("primaryKeyName", primaryKeyName).WithField("foreignKeyName", foreignKeyName).Info()
+func assemble(self []interface{}, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, expJSONName string) ([]interface{}, error) {
 	ret := make([]interface{}, len(self))
-	for k, v := range self {
-		value, err := valueOfField(v, primaryKeyName)
+	for _, vSelf := range self {
+		exp := make([]interface{}, 0)
+		value, err := valueOfField(vSelf, primaryKeyName)
 		if err != nil {
 			return nil, err
 		}
-		// logrus.Print(k)
 
-		for kk, vv := range foreign {
-			if vvv, ok := vv[foreignKeyName]; ok {
-				logrus.WithFields(logrus.Fields{
-					"k":                     k,
-					"kk":                    kk,
-					"vvv":                   vvv,
-					"value":                 value,
-					"eq":                    reflect.DeepEqual(vvv, value),
-					"eq1":                   vvv == value,
-					"bbb":                   reflect.TypeOf(vvv) == reflect.TypeOf(value),
-					"reflect.TypeOf(vvv)":   reflect.TypeOf(vvv),
-					"reflect.TypeOf(value)": reflect.TypeOf(value),
-				}).Info()
+		for _, vForeign := range foreign {
+			if sameKeyValue, ok := vForeign[foreignKeyName]; ok {
+				v1, err := builtinValue(sameKeyValue)
+				if err != nil {
+					return nil, err
+				}
+				v2, err := builtinValue(value)
+				if err != nil {
+					return nil, err
+				}
+				if reflect.DeepEqual(v1, v2) {
+					exp = append(exp, vForeign)
+				}
 			}
+		}
+
+		if err := setFieldWithJSONString(vSelf, expJSONName, exp); err != nil {
+			logrus.WithError(err).Error()
+			return ret, err
 		}
 	}
 	return ret, nil
+}
+
+func builtinValue(i interface{}) (o interface{}, err error) {
+
+	value := reflect.ValueOf(i)
+
+	switch value.Kind() {
+	// case reflect.Int64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
+	// 	o = int64(i.())
+	// 	return
+	// case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	// 	o = i.(uint64)
+	// 	return
+	// case reflect.Uintptr:
+	// 	// TODO:
+	// 	return nil, fmt.Errorf("unsupported")
+
+	case reflect.Uint:
+		o = uint(i.(uint))
+		return o, nil
+	case reflect.Uint64:
+		o = uint(i.(uint64))
+		return o, nil
+	case reflect.Uint32:
+		o = uint(i.(uint32))
+		return o, nil
+	case reflect.Uint16:
+		o = uint(i.(uint16))
+		return o, nil
+	case reflect.Uint8:
+		o = uint(i.(uint8))
+		return o, nil
+	case reflect.Int:
+		o = uint(i.(int))
+		return o, nil
+	case reflect.Int64:
+		o = uint(i.(int64))
+		return o, nil
+	case reflect.Int32:
+		o = uint(i.(int32))
+		return o, nil
+	case reflect.Int16:
+		o = uint(i.(int16))
+		return o, nil
+	case reflect.Int8:
+		o = uint(i.(int8))
+		return o, nil
+	case reflect.String:
+		o = i.(string)
+		return o, nil
+	case reflect.Bool:
+		// if kv, err := strconv.ParseBool(v); err == nil {
+		// 	ret = kv
+		// }
+		return nil, fmt.Errorf("unsupported")
+	default:
+		// TODO:
+		return nil, fmt.Errorf("unsupported")
+	}
 }

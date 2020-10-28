@@ -237,13 +237,6 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	eq, gt, lt, gte, lte := URLValues(config.Model, params)
 
 	tx := config.DB.Model(config.Model)
-	preloads := []string{}
-	for _, v := range relations.HasMany {
-		preloads = append(preloads, v.Name)
-	}
-	for _, v := range relations.Many2Many {
-		preloads = append(preloads, v.Name)
-	}
 
 	for k, v := range eq {
 		tx = tx.Where(fmt.Sprintf("%s IN ?", k), v)
@@ -276,15 +269,11 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		tmp := clone(config.Model)
 		modelResults[k] = tmp
 	}
-	for k, v := range modelResults {
-		logrus.WithField("kk", k).Printf("%#v", v)
-	}
+
+	// for _, v := range relations.Many2Many {
+	// }
 
 	for _, v := range relations.HasMany {
-		// logrus.WithField("here", 1).Printf("%#v", v)
-		// logrus.WithField("here", 2).Printf("%#v", v.Field)
-		// logrus.WithField("here", 3).Printf("%#v", v.FieldSchema.PrimaryFieldDBNames)
-		// logrus.WithField("here", 4).Printf("%#v", v.Schema.PrimaryFields[0].Name)
 		primaryFieldValues := make([]interface{}, len(modelResults))
 
 		if len(modelSchema.PrimaryFields) <= 0 {
@@ -297,25 +286,18 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 			if err != nil {
 				return nil, err
 			}
-			logrus.WithField("k", 3).WithField("primaryFieldValue", primaryFieldValue).Print()
 			primaryFieldValues[k] = primaryFieldValue
 		}
-		logrus.Printf("%#v", primaryFieldValues)
 		var hasManyResults []map[string]interface{}
 		config.DB.Table(v.References[0].ForeignKey.Schema.Table).Where(fmt.Sprintf("%s IN ?", v.References[0].ForeignKey.DBName), primaryFieldValues).Find(&hasManyResults)
-		logrus.Printf("%#v", hasManyResults)
-		assemble(modelResults, hasManyResults, v.FieldSchema.PrimaryFields[0].Name, v.References[0].ForeignKey.DBName)
-	}
 
-	// for _, v := range relations.Many2Many {
-	// 	logrus.WithField("relations.Many2Many.Name", v.Name).Infof("%#v", v)
-	// 	var m2mResults []map[string]interface{}
-	// 	config.DB.Table("users").Find(&m2mResults)
-	// }
+		assemble(modelResults, hasManyResults,
+			v.FieldSchema.PrimaryFields[0].Name, v.References[0].ForeignKey.DBName,
+			v.Field.StructField.Tag.Get("json"))
+	}
 
 	logrus.WithField("count", count).Info()
 	config.Results = modelResults
-
 	c.Set(keyCount, count)
 	c.Set(keyData, config.Results)
 	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
