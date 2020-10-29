@@ -25,56 +25,56 @@ type Response struct {
 
 // Food many to many dog
 type Food struct {
-	ID        uint      `gorm:"primarykey" json:"id" mapstructure:"id"`
+	ID        uint      `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
-	Brand     string    `json:"brand" mapstructure:"brand"`
+	Brand     string    `json:"brand"`
 }
 
 // Owner has one dog
 type Owner struct {
-	ID        uint      `gorm:"primarykey" json:"id" mapstructure:"id"`
+	ID        uint      `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name" mapstructure:"name"`
-	Dog       Dog       `json:"dog" mapstructure:"dog"`
+	Name      string    `json:"name"`
+	Dog       Dog       `json:"dog"`
 }
 
 // Dog has many toys
 type Dog struct {
-	ID        uint      `gorm:"primarykey" json:"id" mapstructure:"id"`
+	ID        uint      `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name" mapstructure:"name"`
-	OwnerID   uint      `json:"owner_id" mapstructure:"owner_id"`
-	Toys      []Toy     `json:"toys" mapstructure:"toys"`
-	Foods     []Food    `json:"foods" mapstructure:"foods" gorm:"many2many:dog_foods"`
-	BreedID   uint      `json:"bread_id" mapstructure:"breed_id"`
+	Name      string    `json:"name"`
+	OwnerID   uint      `json:"owner_id"`
+	Toys      []Toy     `json:"toys"`
+	Foods     []Food    `json:"foods" gorm:"many2many:dog_foods"`
+	BreedID   uint      `json:"bread_id"`
 }
 
 // Profile belongs to a dog
 type Profile struct {
-	ID        uint      `gorm:"primarykey" json:"id" mapstructure:"id"`
+	ID        uint      `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
-	Age       uint      `json:"age" mapstructure:"age"`
-	DogID     uint      `json:"-" mapstructure:"dog_id"`
-	Dog       Dog       `json:"dog" mapstructure:"dog"`
+	Age       uint      `json:"age"`
+	DogID     uint      `json:"-"`
+	Dog       Dog       `json:"dog"`
 }
 
 type Toy struct {
-	ID        uint      `gorm:"primarykey" json:"id" mapstructure:"id"`
+	ID        uint      `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name" mapstructure:"name"`
-	DogID     uint      `json:"dog_id" mapstructure:"dog_id"`
+	Name      string    `json:"name"`
+	DogID     uint      `json:"dog_id"`
 }
 
 type Breed struct {
-	ID        uint      `gorm:"primarykey" json:"id" mapstructure:"id"`
+	ID        uint      `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name" mapstructure:"name"`
+	Name      string    `json:"name"`
 }
 
 var gormDB *gorm.DB

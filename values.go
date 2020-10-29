@@ -76,7 +76,6 @@ func toTimeHookFunc() mapstructure.DecodeHookFunc {
 
 		switch f.Kind() {
 		case reflect.String:
-			// logrus.WithField("time raw", data.(string)).Info()
 			return time.Parse(time.RFC3339, data.(string))
 		case reflect.Float64:
 			return time.Unix(0, int64(data.(float64))*int64(time.Millisecond)), nil
