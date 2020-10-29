@@ -38,12 +38,11 @@ func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
 	})
 	r.DELETE("/dogs/:id", func(c *gin.Context) {
 		config := Configuration{
-			DB:        gormDB,
-			Table:     "dogs",
-			Columms:   "*",
-			Model:     &Dog{},
-			Results:   []interface{}{},
-			NeedCount: true,
+			DB:      gormDB,
+			Table:   "dogs",
+			Columms: "*",
+			Model:   &Dog{},
+			Action:  []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultDeleteAction}},
 		}
 		c.Set(KeyConfig, &config)
 		return

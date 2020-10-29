@@ -27,11 +27,14 @@ func params(c *gin.Context) (*Params, error) {
 	return &params, nil
 }
 
-func mergeParams(a, b Params) (ret Params) {
-	return
+func valueSliceWithParamKey(params Params, key string) []string {
+	if v, exist := params[key]; exist {
+		return v
+	}
+	return nil
 }
 
-func valueOfParams(params Params, key string) (value string) {
+func valueOfSingleParam(params Params, key string) (value string) {
 	if v, exist := params[key]; exist {
 		if len(v) == 1 {
 			return v[0]
@@ -43,11 +46,11 @@ func valueOfParams(params Params, key string) (value string) {
 func separatePage(params Params) (filterParams Params, page, limit, offset uint64) {
 	var s Params
 	s, filterParams = separateParams(params, "offset", "page", "limit")
-	str := valueOfParams(s, `offset`)
+	str := valueOfSingleParam(s, `offset`)
 	offset, _ = strconv.ParseUint(str, 10, 64)
-	str = valueOfParams(s, `page`)
+	str = valueOfSingleParam(s, `page`)
 	page, _ = strconv.ParseUint(str, 10, 64)
-	str = valueOfParams(s, `limit`)
+	str = valueOfSingleParam(s, `limit`)
 	limit, _ = strconv.ParseUint(str, 10, 64)
 	return
 }
