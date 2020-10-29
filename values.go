@@ -13,7 +13,9 @@ import (
 	"github.com/adam-hanna/arrayOperations"
 	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 // StructMap converts struct to map
@@ -28,13 +30,17 @@ func StructMap(src interface{}, timeLayout string) (ret map[string]interface{}, 
 
 		switch v := reflect.ValueOf(src); v.Kind() {
 		case reflect.Struct:
-			tofs := reflect.TypeOf(src)
 			vofs := reflect.ValueOf(src)
 			for i := 0; i < vofs.NumField(); i++ {
 				switch vofs.Field(i).Interface().(type) {
 				case *time.Time:
 					t := vofs.Field(i).Interface().(*time.Time)
-					name, _, _, _, _ := disassembleTag(tofs.Field(i).Tag.Get(`lazy`))
+					name, err := dbNameWithFieldName(v, vofs.Field(i).Type().Name())
+					if err != nil {
+						logrus.WithError(fmt.Errorf("can't find schema field name: %s", name)).Warn()
+						continue
+					}
+
 					if _, ok := ret[name]; ok {
 						if t != nil {
 							ret[name] = t.Format(timeLayout)
@@ -42,7 +48,11 @@ func StructMap(src interface{}, timeLayout string) (ret map[string]interface{}, 
 					}
 				case time.Time:
 					t := vofs.Field(i).Interface().(time.Time)
-					name, _, _, _, _ := disassembleTag(tofs.Field(i).Tag.Get(`lazy`))
+					name, err := dbNameWithFieldName(v, vofs.Field(i).Type().Name())
+					if err != nil {
+						logrus.WithError(fmt.Errorf("can't find schema field name: %s", name)).Warn()
+						continue
+					}
 					if _, ok := ret[name]; ok {
 						ret[name] = t.Format(timeLayout)
 					}
@@ -152,15 +162,33 @@ func Parse(v string, k reflect.Kind) (ret interface{}) {
 	return
 }
 
+func dbNameWithFieldName(v interface{}, fieldName string) (string, error) {
+	m, err := schema.Parse(v, schemaStore, schema.NamingStrategy{})
+	if err != nil {
+		return fieldName, err
+	}
+	schemaField, ok := m.FieldsByName[fieldName]
+	if !ok {
+		return fieldName, fmt.Errorf("can't find schema field name: %s", fieldName)
+	}
+	return schemaField.DBName, nil
+
+}
+
 // TagSlice ...
-func TagSlice(v interface{}, m map[string][]string) map[string][]interface{} {
+func TagSlice(v interface{}, params map[string][]string) map[string][]interface{} {
 	ret := make(map[string][]interface{})
 	val := reflect.ValueOf(v).Elem()
+
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
-		name, _, _, _, _ := disassembleTag(field.Tag.Get(`lazy`))
-		if t := name; t != `` {
-			if vv, ok := m[t]; ok {
+		dbName, err := dbNameWithFieldName(v, field.Name)
+		if err != nil {
+			logrus.WithError(fmt.Errorf("can't find schema field name: %s", field.Name)).Warn()
+			continue
+		}
+		if t := dbName; t != `` {
+			if vv, ok := params[t]; ok {
 				ret[t] = make([]interface{}, 0)
 				for _, vvv := range vv {
 					ret[t] = append(ret[t], Parse(vvv, field.Type.Kind()))
@@ -178,7 +206,12 @@ func Tag(v interface{}, m map[string]string) map[string]interface{} {
 	val := reflect.ValueOf(v).Elem()
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
-		name, _, _, _, _ := disassembleTag(field.Tag.Get(`lazy`))
+		name, err := dbNameWithFieldName(v, field.Name)
+		if err != nil {
+			logrus.WithError(fmt.Errorf("can't find schema field name: %s", field.Name)).Warn()
+			continue
+		}
+
 		if t := name; t != `` {
 			if vv, ok := m[t]; ok {
 				name := field.Name

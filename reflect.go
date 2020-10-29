@@ -5,18 +5,11 @@ import (
 	"go/ast"
 	"reflect"
 	"strings"
-	"sync"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 )
-
-var cacheStore *sync.Map
-
-func init() {
-	cacheStore = &sync.Map{}
-}
 
 func clone(inter interface{}) interface{} {
 	newInter := reflect.New(reflect.TypeOf(inter).Elem())

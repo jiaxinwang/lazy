@@ -42,8 +42,8 @@ type Owner struct {
 
 // Dog has many toys
 type Dog struct {
-	ID uint `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
-	// ID        uint      `gorm:"primarykey" json:"id" mapstructure:"id"`
+	// ID uint `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
+	ID        uint      `gorm:"primarykey" json:"id" mapstructure:"id"`
 	CreatedAt time.Time `json:"created_at" lazy:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" lazy:"updated_at" mapstructure:"updated_at"`
 

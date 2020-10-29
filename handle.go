@@ -3,7 +3,6 @@ package lazy
 import (
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/antchfx/jsonquery"
 	"github.com/levigross/grequests"
@@ -124,12 +123,14 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	if err != nil {
 		return nil, err
 	}
-	modelSchema, err := schema.Parse(config.Model, &sync.Map{}, schema.NamingStrategy{})
+	modelSchema, err := schema.Parse(config.Model, schemaStore, schema.NamingStrategy{})
 	if err != nil {
 		return nil, err
 	}
 
 	eq, gt, lt, gte, lte := URLValues(config.Model, params)
+	logrus.Warn(params)
+	logrus.Warn(eq)
 
 	tx := config.DB.Model(config.Model)
 
