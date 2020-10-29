@@ -1,6 +1,7 @@
 package lazy
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,10 +23,6 @@ func TestDefaultGetAction(t *testing.T) {
 	q.Add("id", `2`)
 	req.URL.RawQuery = q.Encode()
 
-	// dds, _ := newStructSlice("Dog")
-	// gormDB.Model(&Dog{}).Where("id = 1").Find(&dds)
-	// logrus.Print(dds)
-
 	var dog1 Dog
 	gormDB.Where("id = 1").Preload("Toys").Preload("Foods").Find(&dog1)
 	logrus.Printf("%#v", dog1)
@@ -38,7 +35,7 @@ func TestDefaultGetAction(t *testing.T) {
 	assert.NoError(t, err)
 	var ret Ret
 	MapStruct(response.Data.(map[string]interface{}), &ret)
-	logrus.WithField("ref", ret).Info()
+	logrus.WithField("ret", fmt.Sprintf("%+v", ret)).Info()
 
 	assert.Equal(t, 2, ret.Count)
 	// assert.Equal(t, 2, len(ret.Items))

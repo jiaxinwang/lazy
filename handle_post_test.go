@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +49,8 @@ func TestDefaultPostAction(t *testing.T) {
 			t.Errorf("db find dog = %v", err)
 			return
 		}
-		// gormDB.Model(&dbDog).Preload("Foods")
+
+		logrus.Printf("%+v", dbDog)
 
 		if !cmp.Equal(
 			dog,
@@ -113,8 +115,6 @@ func TestPostAction(t *testing.T) {
 				t.Errorf("db find dog = %v", err)
 				return
 			}
-			// gormDB.Model(&dbDog).Related(&dbDog.Foods, "Foods")
-
 			if !cmp.Equal(
 				dog,
 				dbDog,

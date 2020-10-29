@@ -182,7 +182,7 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 
 		mapForeignFieldValues := make(map[interface{}]bool)
 		for _, vv := range joinTableResults {
-			if value, ok := vv[vM2MRelation.JoinTable.DBNames[0]]; ok {
+			if value, ok := vv[vM2MRelation.JoinTable.DBNames[1]]; ok {
 				mapForeignFieldValues[value] = true
 			}
 		}
@@ -224,7 +224,7 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 			vHasManyRelation.Field.StructField.Tag.Get("json"))
 	}
 
-	logrus.WithField("count", count).Info()
+	logrus.WithField("count", count).Trace()
 	config.Results = modelResults
 	c.Set(keyCount, count)
 	c.Set(keyData, config.Results)
