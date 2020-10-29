@@ -129,9 +129,6 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	}
 
 	eq, gt, lt, gte, lte := URLValues(config.Model, params)
-	logrus.Warn(params)
-	logrus.Warn(eq)
-
 	tx := config.DB.Model(config.Model)
 
 	for k, v := range eq {
