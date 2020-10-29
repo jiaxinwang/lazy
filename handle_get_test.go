@@ -38,8 +38,9 @@ func TestDefaultGetAction(t *testing.T) {
 	assert.NoError(t, err)
 	var ret Ret
 	MapStruct(response.Data.(map[string]interface{}), &ret)
+	logrus.WithField("ref", ret).Info()
 
-	// assert.Equal(t, 2, ret.Count)
+	assert.Equal(t, 2, ret.Count)
 	// assert.Equal(t, 2, len(ret.Items))
 
 	// assert.Equal(t, ret.Items[0].ID, uint(1))

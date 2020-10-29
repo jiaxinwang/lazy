@@ -13,130 +13,10 @@ import (
 	"github.com/adam-hanna/arrayOperations"
 	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
-
-// LazyTagSlice ...
-func LazyTagSlice(v interface{}, m map[string][]string) map[string][]interface{} {
-	ret := make(map[string][]interface{})
-	val := reflect.ValueOf(v).Elem()
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Type().Field(i)
-		name, _, _, _, _ := disassembleTag(field.Tag.Get(`lazy`))
-		if t := name; t != `` {
-			if vv, ok := m[t]; ok {
-				ret[t] = make([]interface{}, 0)
-				for _, vvv := range vv {
-					ret[t] = append(ret[t], LazyParse(vvv, field.Type.Kind()))
-				}
-			}
-		}
-	}
-
-	return ret
-}
-
-// LazyParse ...
-func LazyParse(v string, k reflect.Kind) (ret interface{}) {
-	switch k {
-	case reflect.Uint:
-		if kv, err := strconv.ParseUint(v, 10, 64); err == nil {
-			ret = uint(kv)
-		}
-	case reflect.Uint64:
-		if kv, err := strconv.ParseUint(v, 10, 64); err == nil {
-			ret = uint64(kv)
-		}
-	case reflect.Uint32:
-		if kv, err := strconv.ParseUint(v, 10, 32); err == nil {
-			ret = uint32(kv)
-		}
-	case reflect.Uint16:
-		if kv, err := strconv.ParseUint(v, 10, 16); err == nil {
-			ret = uint16(kv)
-		}
-	case reflect.Uint8:
-		if kv, err := strconv.ParseUint(v, 10, 8); err == nil {
-			ret = uint8(kv)
-		}
-	case reflect.Int:
-		if kv, err := strconv.ParseInt(v, 10, 64); err == nil {
-			ret = int(kv)
-		}
-	case reflect.Int64:
-		if kv, err := strconv.ParseInt(v, 10, 64); err == nil {
-			ret = int64(kv)
-		}
-	case reflect.Int32:
-		if kv, err := strconv.ParseInt(v, 10, 32); err == nil {
-			ret = int32(kv)
-		}
-	case reflect.Int16:
-		if kv, err := strconv.ParseInt(v, 10, 16); err == nil {
-			ret = int16(kv)
-		}
-	case reflect.Int8:
-		if kv, err := strconv.ParseInt(v, 10, 8); err == nil {
-			ret = int8(kv)
-		}
-	case reflect.String:
-		ret = v
-	case reflect.Bool:
-		if kv, err := strconv.ParseBool(v); err == nil {
-			ret = kv
-		}
-	default:
-		fmt.Print("unsupported kind")
-	}
-	return
-}
-
-// LazyTag ...
-func LazyTag(v interface{}, m map[string]string) map[string]interface{} {
-	ret := make(map[string]interface{})
-	val := reflect.ValueOf(v).Elem()
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Type().Field(i)
-		name, _, _, _, _ := disassembleTag(field.Tag.Get(`lazy`))
-		if t := name; t != `` {
-			if vv, ok := m[t]; ok {
-				name := field.Name
-				r := reflect.ValueOf(v)
-				f := reflect.Indirect(r).FieldByName(name)
-				fieldValue := f.Interface()
-				switch vvv := fieldValue.(type) {
-				case uint64:
-					i, _ := strconv.ParseUint(vv, 10, 64)
-					ret[t] = i
-				case uint32:
-					i, _ := strconv.ParseUint(vv, 10, 32)
-					ret[t] = i
-				case uint:
-					i, _ := strconv.ParseUint(vv, 10, 64)
-					ret[t] = int(i)
-				case int64:
-					i, _ := strconv.ParseInt(vv, 10, 64)
-					ret[t] = i
-				case int32:
-					i, _ := strconv.ParseInt(vv, 10, 32)
-					ret[t] = i
-				case int:
-					i, _ := strconv.ParseInt(vv, 10, 64)
-					ret[t] = int(i)
-				case string:
-					ret[t] = vv
-				case bool:
-					ret[t], _ = strconv.ParseBool(vv)
-				case time.Time:
-					ret[t], _ = time.Parse(time.RFC3339, vv)
-				default:
-					_ = vvv
-				}
-			}
-		}
-	}
-	return ret
-}
 
 // StructMap converts struct to map
 func StructMap(src interface{}, timeLayout string) (ret map[string]interface{}, err error) {
@@ -150,13 +30,17 @@ func StructMap(src interface{}, timeLayout string) (ret map[string]interface{}, 
 
 		switch v := reflect.ValueOf(src); v.Kind() {
 		case reflect.Struct:
-			tofs := reflect.TypeOf(src)
 			vofs := reflect.ValueOf(src)
 			for i := 0; i < vofs.NumField(); i++ {
 				switch vofs.Field(i).Interface().(type) {
 				case *time.Time:
 					t := vofs.Field(i).Interface().(*time.Time)
-					name, _, _, _, _ := disassembleTag(tofs.Field(i).Tag.Get(`lazy`))
+					name, err := dbNameWithFieldName(v, vofs.Field(i).Type().Name())
+					if err != nil {
+						logrus.WithError(fmt.Errorf("can't find schema field name: %s", name)).Warn()
+						continue
+					}
+
 					if _, ok := ret[name]; ok {
 						if t != nil {
 							ret[name] = t.Format(timeLayout)
@@ -164,7 +48,11 @@ func StructMap(src interface{}, timeLayout string) (ret map[string]interface{}, 
 					}
 				case time.Time:
 					t := vofs.Field(i).Interface().(time.Time)
-					name, _, _, _, _ := disassembleTag(tofs.Field(i).Tag.Get(`lazy`))
+					name, err := dbNameWithFieldName(v, vofs.Field(i).Type().Name())
+					if err != nil {
+						logrus.WithError(fmt.Errorf("can't find schema field name: %s", name)).Warn()
+						continue
+					}
 					if _, ok := ret[name]; ok {
 						ret[name] = t.Format(timeLayout)
 					}
@@ -274,15 +162,33 @@ func Parse(v string, k reflect.Kind) (ret interface{}) {
 	return
 }
 
+func dbNameWithFieldName(v interface{}, fieldName string) (string, error) {
+	m, err := schema.Parse(v, schemaStore, schema.NamingStrategy{})
+	if err != nil {
+		return fieldName, err
+	}
+	schemaField, ok := m.FieldsByName[fieldName]
+	if !ok {
+		return fieldName, fmt.Errorf("can't find schema field name: %s", fieldName)
+	}
+	return schemaField.DBName, nil
+
+}
+
 // TagSlice ...
-func TagSlice(v interface{}, m map[string][]string) map[string][]interface{} {
+func TagSlice(v interface{}, params map[string][]string) map[string][]interface{} {
 	ret := make(map[string][]interface{})
 	val := reflect.ValueOf(v).Elem()
+
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
-		name, _, _, _, _ := disassembleTag(field.Tag.Get(`lazy`))
-		if t := name; t != `` {
-			if vv, ok := m[t]; ok {
+		dbName, err := dbNameWithFieldName(v, field.Name)
+		if err != nil {
+			logrus.WithError(fmt.Errorf("can't find schema field name: %s", field.Name)).Warn()
+			continue
+		}
+		if t := dbName; t != `` {
+			if vv, ok := params[t]; ok {
 				ret[t] = make([]interface{}, 0)
 				for _, vvv := range vv {
 					ret[t] = append(ret[t], Parse(vvv, field.Type.Kind()))
@@ -300,7 +206,12 @@ func Tag(v interface{}, m map[string]string) map[string]interface{} {
 	val := reflect.ValueOf(v).Elem()
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
-		name, _, _, _, _ := disassembleTag(field.Tag.Get(`lazy`))
+		name, err := dbNameWithFieldName(v, field.Name)
+		if err != nil {
+			logrus.WithError(fmt.Errorf("can't find schema field name: %s", field.Name)).Warn()
+			continue
+		}
+
 		if t := name; t != `` {
 			if vv, ok := m[t]; ok {
 				name := field.Name
@@ -462,7 +373,6 @@ func Lazy(params map[string][]string) (eq map[string][]string, gt, lt, gte, lte 
 }
 
 // URLValues ...
-// func URLValues(s interface{}, q url.Values) (eqm map[string][]interface{}, gtm, ltm, gtem, ltem map[string]interface{}) {
 func URLValues(s interface{}, q Params) (eqm map[string][]interface{}, gtm, ltm, gtem, ltem map[string]interface{}) {
 	eq, gt, lt, gte, lte := Lazy(q)
 	eqm = TagSlice(s, eq)

@@ -3,7 +3,6 @@ package lazy
 import (
 	"fmt"
 	"strings"
-	"sync"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/sirupsen/logrus"
@@ -21,7 +20,7 @@ func updateModel(db *gorm.DB, model interface{}) (err error) {
 }
 
 func relationships(db *gorm.DB, model interface{}) (relationships schema.Relationships, err error) {
-	m, err := schema.Parse(model, &sync.Map{}, schema.NamingStrategy{})
+	m, err := schema.Parse(model, schemaStore, schema.NamingStrategy{})
 	if err != nil {
 		return schema.Relationships{}, err
 	}
@@ -30,7 +29,7 @@ func relationships(db *gorm.DB, model interface{}) (relationships schema.Relatio
 }
 
 func associateModel(db *gorm.DB, model interface{}) (err error) {
-	m, err := schema.Parse(model, &sync.Map{}, schema.NamingStrategy{})
+	m, err := schema.Parse(model, schemaStore, schema.NamingStrategy{})
 	if err != nil {
 		return err
 	}

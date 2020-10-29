@@ -8,8 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	gm "github.com/jiaxinwang/common/gin-middleware"
 
-	// gm "github.com/jiaxinwang/common/gin-middleware"
-
 	"github.com/stretchr/testify/assert"
 )
 
