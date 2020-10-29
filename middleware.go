@@ -3,6 +3,7 @@ package lazy
 import (
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -27,6 +28,12 @@ var (
 // MiddlewareParams ...
 func MiddlewareParams(c *gin.Context) {
 	params := Params(c.Request.URL.Query())
+
+	// TODO:
+	if id := c.Param("id"); !strings.EqualFold(id, "") {
+		params["id"] = []string{id}
+	}
+
 	c.Set(KeyParams, params)
 
 	body := make(map[string]interface{})
