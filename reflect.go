@@ -1,7 +1,6 @@
 package lazy
 
 import (
-	"errors"
 	"fmt"
 	"go/ast"
 	"reflect"
@@ -71,33 +70,6 @@ func setFieldWithJSONString(src interface{}, name string, v interface{}) error {
 	}
 	json.UnmarshalFromString(s, src)
 	return nil
-}
-
-func setField(src interface{}, name string, v interface{}) (err error) {
-	ps := reflect.ValueOf(src)
-	s := ps.Elem()
-	if s.Kind() == reflect.Struct {
-		f := s.FieldByName(name)
-		if f.IsValid() {
-			if f.CanSet() {
-				if isNil(v) {
-					f.Set(reflect.Zero(f.Type()))
-				} else {
-					f.Set(reflect.ValueOf(v))
-				}
-			} else {
-				err = errors.New("can't set")
-				return
-			}
-		} else {
-			err = errors.New("not valid")
-			return
-		}
-	} else {
-		err = errors.New("wrong kind")
-		return
-	}
-	return
 }
 
 func valueOfField(src interface{}, name string) (v interface{}, err error) {
@@ -298,21 +270,6 @@ func ParseTagSetting(str string, sep string) map[string]string {
 	return settings
 }
 
-func valueOfTag(inter interface{}, tagName string) interface{} {
-	model := reflect.ValueOf(inter)
-	if model.Kind() == reflect.Ptr {
-		model = model.Elem()
-	}
-
-	for i := 0; i < model.NumField(); i++ {
-		fieldType := model.Type().Field(i)
-		if name, _, _, _, err := disassembleTag(fieldType.Tag.Get("lazy")); err == nil && strings.EqualFold(name, tagName) {
-			return model.Field(i).Interface()
-		}
-	}
-	return nil
-}
-
 const (
 	// ForeignOfModelName ...
 	ForeignOfModelName = 0
@@ -323,23 +280,6 @@ const (
 	// ForeignOfModelForeignID ...
 	ForeignOfModelForeignID = 3
 )
-
-func foreignOfModel(inter interface{}) [][4]string {
-	ret := make([][4]string, 0)
-
-	model := reflect.ValueOf(inter)
-	if model.Kind() == reflect.Ptr {
-		model = model.Elem()
-	}
-	for i := 0; i < model.NumField(); i++ {
-		fieldType := model.Type().Field(i)
-		if name, id, ft, fk, err := disassembleTag(fieldType.Tag.Get("lazy")); err == nil && len(ft) > 0 && len(fk) > 0 {
-			ret = append(ret, [4]string{name, id, ft, fk})
-		}
-	}
-
-	return ret
-}
 
 func equalBuiltinInterface(a, b interface{}) bool {
 	v1, err := builtinValue(a)

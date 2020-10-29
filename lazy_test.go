@@ -42,14 +42,20 @@ type Owner struct {
 
 // Dog has many toys
 type Dog struct {
-	ID        uint      `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
+	ID uint `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
+	// ID        uint      `gorm:"primarykey" json:"id" mapstructure:"id"`
 	CreatedAt time.Time `json:"created_at" lazy:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" lazy:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name" lazy:"name" mapstructure:"name"`
-	OwnerID   uint      `json:"owner_id" lazy:"owner_id" mapstructure:"owner_id"`
-	Toys      []Toy     `json:"toys" lazy:"toys" mapstructure:"toys"`
-	Foods     []Food    `json:"foods" lazy:"foods" mapstructure:"foods" gorm:"many2many:dog_foods"`
-	BreedID   uint      `json:"bread_id" lazy:"breed_id" mapstructure:"breed_id"`
+
+	// ID        uint      `gorm:"primary_key"  json:"id"`
+	// CreatedAt time.Time `json:"created_at"`
+	// UpdatedAt time.Time `json:"updated_at"`
+
+	Name    string `json:"name" lazy:"name" mapstructure:"name"`
+	OwnerID uint   `json:"owner_id" lazy:"owner_id" mapstructure:"owner_id"`
+	Toys    []Toy  `json:"toys" lazy:"toys" mapstructure:"toys"`
+	Foods   []Food `json:"foods" lazy:"foods" mapstructure:"foods" gorm:"many2many:dog_foods"`
+	BreedID uint   `json:"bread_id" lazy:"breed_id" mapstructure:"breed_id"`
 }
 
 // Profile belongs to a dog
