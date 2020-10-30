@@ -37,7 +37,6 @@ type Owner struct {
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
 	Name      string    `json:"name"`
-	Dog       Dog       `json:"dog"`
 }
 
 // Dog has many toys
@@ -46,7 +45,8 @@ type Dog struct {
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
 	Name      string    `json:"name"`
-	OwnerID   uint      `json:"owner_id"`
+	OwnerID   int       `json:"owner_id" mapstructure:"owner_id"`
+	Owner     Owner     `json:"owner"`
 	Toys      []Toy     `json:"toys"`
 	Foods     []Food    `json:"foods" gorm:"many2many:dog_foods"`
 	BreedID   uint      `json:"bread_id"`
@@ -197,7 +197,7 @@ func initTestDB() {
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
 
-	dog = &Dog{Name: "Jack", OwnerID: 9, BreedID: 3}
+	dog = &Dog{Name: "Jack", OwnerID: 1, BreedID: 3}
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
 

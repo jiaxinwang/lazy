@@ -162,6 +162,31 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		tmp := clone(config.Model)
 		modelResults[k] = tmp
 	}
+	for _, vBelongToRelation := range relations.BelongsTo {
+
+		ref := vBelongToRelation.References[0]
+		foreignKeyName := ref.ForeignKey.Name
+		primaryFieldValues := make([]interface{}, len(modelResults))
+		if len(ref.PrimaryKey.Schema.PrimaryFieldDBNames) <= 0 {
+			return nil, fmt.Errorf("primary fields not found")
+		}
+
+		for kModelResults, vModelResults := range modelResults {
+			primaryFieldValue, err := valueOfField(vModelResults, foreignKeyName)
+			if err != nil {
+				return nil, err
+			}
+			primaryFieldValues[kModelResults] = primaryFieldValue
+		}
+
+		var belongToResults []map[string]interface{}
+		config.DB.Table(ref.PrimaryKey.Schema.Table).Where(fmt.Sprintf("%s IN ?", ref.PrimaryKey.Schema.PrimaryFieldDBNames[0]), primaryFieldValues).Find(&belongToResults)
+
+		assembleBelongTo(modelResults, belongToResults,
+			ref.ForeignKey.Name, ref.PrimaryKey.Schema.PrimaryFieldDBNames[0],
+			vBelongToRelation.Field.StructField.Tag.Get("json"))
+
+	}
 
 	for _, vM2MRelation := range relations.Many2Many {
 		primaryFieldValues := make([]interface{}, len(modelResults))

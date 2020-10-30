@@ -350,6 +350,40 @@ func assembleHasMany(self []interface{}, foreign []map[string]interface{}, prima
 	return ret, nil
 }
 
+func assembleBelongTo(self []interface{}, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, expJSONName string) ([]interface{}, error) {
+	ret := make([]interface{}, len(self))
+	for _, vSelf := range self {
+		var exp interface{}
+		value, err := valueOfField(vSelf, primaryKeyName)
+		logrus.Print("value=", value)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, vForeign := range foreign {
+			if sameKeyValue, ok := vForeign[foreignKeyName]; ok {
+				v1, err := builtinValue(sameKeyValue)
+				if err != nil {
+					return nil, err
+				}
+				v2, err := builtinValue(value)
+				if err != nil {
+					return nil, err
+				}
+				if reflect.DeepEqual(v1, v2) {
+					exp = vForeign
+				}
+			}
+		}
+
+		if err := setFieldWithJSONString(vSelf, expJSONName, exp); err != nil {
+			logrus.WithError(err).Error()
+			return ret, err
+		}
+	}
+	return ret, nil
+}
+
 func builtinValue(i interface{}) (o interface{}, err error) {
 
 	value := reflect.ValueOf(i)
