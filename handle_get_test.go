@@ -21,10 +21,11 @@ func TestDefaultGetAction(t *testing.T) {
 	q := req.URL.Query()
 	q.Add("id", `1`)
 	q.Add("id", `2`)
+	// q.Add("id", `13`)
 	req.URL.RawQuery = q.Encode()
 
 	var dog1 Dog
-	gormDB.Where("id = 1").Preload("Toys").Preload("Foods").Find(&dog1)
+	gormDB.Where("id = 1").Preload("Toys").Preload("Foods").Preload("Owner").Find(&dog1)
 	logrus.Printf("%#v", dog1)
 
 	r.ServeHTTP(w, req)

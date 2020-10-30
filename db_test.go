@@ -9,16 +9,17 @@ import (
 func Test_createModel(t *testing.T) {
 	initTestDB()
 	var dog Dog
-	assert.NoError(t, createModel(gormDB, &Owner{Name: "has-one-owner", Dog: Dog{Name: "has-one-dog"}}))
+	// assert.NoError(t, createModel(gormDB, &Owner{Name: "has-one-owner", Dog: Dog{Name: "has-one-dog"}}))
+	assert.NoError(t, createModel(gormDB, &Owner{Name: "has-one-owner"}))
 
 	// has one
 	var owner Owner
-	assert.NoError(t, gormDB.Preload("Dog").Where("name = ?", "has-one-owner").Find(&owner).Error)
+	assert.NoError(t, gormDB.Where("name = ?", "has-one-owner").Find(&owner).Error)
 	// assert.NoError(t, gormDB.Model(&owner).Related(&owner.Dog).Error)
 
 	assert.Equal(t, "has-one-owner", owner.Name)
-	assert.Equal(t, "has-one-dog", owner.Dog.Name)
-	assert.Equal(t, owner.ID, owner.Dog.OwnerID)
+	// assert.Equal(t, "has-one-dog", owner.Dog.Name)
+	// assert.Equal(t, owner.ID, owner.Dog.OwnerID)
 
 	// has many
 	assert.NoError(t, createModel(gormDB, &Dog{Name: "has-many-toys-dog", Toys: []Toy{{Name: "toy-1"}, {Name: "toy-2"}}}))
@@ -52,6 +53,12 @@ func Test_createModel(t *testing.T) {
 	assert.Equal(t, `Pedigree`, dog.Foods[0].Brand)
 	assert.Equal(t, uint(3), dog.Foods[1].ID)
 	assert.Equal(t, `Diamond`, dog.Foods[1].Brand)
+
+	// belong to
+	assert.NoError(t, createModel(gormDB, &Dog{Name: "belong-to", Owner: Owner{ID: 1}}))
+	dog = Dog{}
+	assert.NoError(t, gormDB.Preload("Owner").Where("name = ?", "belong-to").Find(&dog).Error)
+	// logrus.Printf("%+v", dog)
 
 }
 

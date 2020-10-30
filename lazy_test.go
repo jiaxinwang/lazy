@@ -37,7 +37,6 @@ type Owner struct {
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
 	Name      string    `json:"name"`
-	Dog       Dog       `json:"dog"`
 }
 
 // Dog has many toys
@@ -47,9 +46,10 @@ type Dog struct {
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
 	Name      string    `json:"name"`
 	OwnerID   uint      `json:"owner_id"`
-	Toys      []Toy     `json:"toys"`
-	Foods     []Food    `json:"foods" gorm:"many2many:dog_foods"`
-	BreedID   uint      `json:"bread_id"`
+	Owner     Owner
+	Toys      []Toy  `json:"toys"`
+	Foods     []Food `json:"foods" gorm:"many2many:dog_foods"`
+	BreedID   uint   `json:"bread_id"`
 }
 
 // Profile belongs to a dog
