@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
@@ -21,12 +22,32 @@ func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface
 		return nil, ErrParamMissing
 	}
 
-	id := valueSliceWithParamKey(*contextParams, "id")
+	ids := valueSliceWithParamKey(*contextParams, "id")
 
 	m, err := schema.Parse(config.Model, schemaStore, schema.NamingStrategy{})
-	logrus.Print(m.PrimaryFieldDBNames[0])
 
-	err = config.DB.Model(config.Model).Where(fmt.Sprintf("%s in ?", m.PrimaryFieldDBNames[0]), id).Delete(config.Model).Error
+	for _, vID := range ids {
+		priDBName := m.PrimaryFieldDBNames[0]
+		mapResult := map[string]interface{}{}
+		err := config.DB.Model(config.Model).Where(fmt.Sprintf("%s = ?", priDBName), vID).Find(&mapResult).Error
+		if err != nil {
+			logrus.WithError(err).Warn()
+			continue
+		}
+		cloned := clone(config.Model)
+		MapStruct(mapResult, cloned)
+
+		for _, v := range m.Relationships.Relations {
+			logrus.WithField("kind", "HasMany").Print(v.Name)
+			err = config.DB.Model(cloned).Association(v.Name).Clear()
+			if err != nil && err != gorm.ErrRecordNotFound {
+				logrus.WithError(err).Error()
+				return nil, err
+			}
+		}
+	}
+
+	err = config.DB.Model(config.Model).Where(fmt.Sprintf("%s in ?", m.PrimaryFieldDBNames[0]), ids).Delete(config.Model).Error
 
 	return nil, err
 

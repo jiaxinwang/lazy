@@ -17,7 +17,7 @@ func TestDefaultDeleteAction(t *testing.T) {
 
 	// GET
 	// req, _ := http.NewRequest("DELETE", "/dogs/:id", nil)
-	req, _ := http.NewRequest("DELETE", "/dogs/1", nil)
+	req, _ := http.NewRequest("DELETE", "/dogs/6", nil)
 
 	q := req.URL.Query()
 	// q.Add("id", `1`)
@@ -32,8 +32,10 @@ func TestDefaultDeleteAction(t *testing.T) {
 	assert.NoError(t, err)
 
 	var dog Dog
-	err = gormDB.Where("id = 1").Take(&dog).Error
+	err = gormDB.Where("id = 6").Take(&dog).Error
 	assert.Equal(t, gorm.ErrRecordNotFound, err)
+
+	logrus.Print(dog)
 
 	// err = gormDB.Where("id = 2").Take(&dog).Error
 	// assert.Equal(t, gorm.ErrRecordNotFound, err)
