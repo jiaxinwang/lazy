@@ -26,10 +26,8 @@ func defaultDogRouter(r *gin.Engine) *gin.Engine {
 	r.GET("/dogs", func(c *gin.Context) {
 		config := Configuration{
 			DB:        gormDB,
-			Table:     "dogs",
 			Columms:   "*",
 			Model:     &Dog{},
-			Results:   []interface{}{},
 			NeedCount: true,
 			Action:    []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultGetAction}},
 		}
@@ -39,7 +37,6 @@ func defaultDogRouter(r *gin.Engine) *gin.Engine {
 	r.DELETE("/dogs/:id", func(c *gin.Context) {
 		config := Configuration{
 			DB:      gormDB,
-			Table:   "dogs",
 			Columms: "*",
 			Model:   &Dog{},
 			Action:  []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultDeleteAction}},
@@ -68,7 +65,6 @@ func defaultDogRouter(r *gin.Engine) *gin.Engine {
 	r.PUT("/dogs/:id", func(c *gin.Context) {
 		config := Configuration{
 			DB:     gormDB,
-			Table:  "dogs",
 			Model:  &Dog{},
 			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultPutAction}},
 		}
@@ -79,7 +75,6 @@ func defaultDogRouter(r *gin.Engine) *gin.Engine {
 	r.POST("/dogs/:id/toys", func(c *gin.Context) {
 		config := Configuration{
 			DB:     gormDB,
-			Table:  "dogs",
 			Model:  &Dog{},
 			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultRelatedPostAction}},
 		}
@@ -100,10 +95,8 @@ func TestDefaultHTTPActionMiddleware(t *testing.T) {
 			payload := &HTTPRequest{"https://httpbin.org/anything/1", "GET", 1}
 			config := Configuration{
 				DB:        gormDB,
-				Table:     "dogs",
 				Columms:   "*",
 				Model:     &Dog{},
-				Results:   []interface{}{},
 				NeedCount: true,
 				Action:    []Action{{DB: gormDB, Payload: payload, Action: DefaultHTTPRequestAction}},
 			}
