@@ -27,7 +27,7 @@ var (
 
 // MiddlewareParams ...
 func MiddlewareParams(c *gin.Context) {
-	params := Params(c.Request.URL.Query())
+	params := map[string][]string(c.Request.URL.Query())
 
 	// TODO:
 	if id := c.Param("id"); !strings.EqualFold(id, "") {
@@ -88,11 +88,6 @@ func MiddlewareExec(c *gin.Context) {
 					c.Set(KeyErrorMessage, err.Error())
 				}
 			}
-			// case http.MethodDelete:
-			// 	// FIXME:
-			// 	if _, err := DeleteHandle(c); err != nil {
-			// 		c.Set(KeyErrorMessage, err.Error())
-			// 		return
 		}
 		return
 	}()

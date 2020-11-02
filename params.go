@@ -13,28 +13,28 @@ import (
 )
 
 // Params maps a string key to a list of values.
-type Params map[string][]string
+// type Params map[string][]string
 
-func params(c *gin.Context) (*Params, error) {
+func params(c *gin.Context) (map[string][]string, error) {
 	paramsItr, ok := c.Get(KeyParams)
 	if !ok {
 		return nil, ErrParamMissing
 	}
-	params, ok := paramsItr.(Params)
+	params, ok := paramsItr.(map[string][]string)
 	if !ok {
 		return nil, ErrUnknown
 	}
-	return &params, nil
+	return params, nil
 }
 
-func valueSliceWithParamKey(params Params, key string) []string {
+func valueSliceWithParamKey(params map[string][]string, key string) []string {
 	if v, exist := params[key]; exist {
 		return v
 	}
 	return nil
 }
 
-func valueOfSingleParam(params Params, key string) (value string) {
+func valueOfSingleParam(params map[string][]string, key string) (value string) {
 	if v, exist := params[key]; exist {
 		if len(v) == 1 {
 			return v[0]
@@ -43,8 +43,8 @@ func valueOfSingleParam(params Params, key string) (value string) {
 	return ``
 }
 
-func separatePage(params Params) (filterParams Params, page, limit, offset uint64) {
-	var s Params
+func separatePage(params map[string][]string) (filterParams map[string][]string, page, limit, offset uint64) {
+	var s map[string][]string
 	s, filterParams = separateParams(params, "offset", "page", "limit")
 	str := valueOfSingleParam(s, `offset`)
 	offset, _ = strconv.ParseUint(str, 10, 64)
@@ -55,9 +55,9 @@ func separatePage(params Params) (filterParams Params, page, limit, offset uint6
 	return
 }
 
-func separateParams(whole Params, keys ...string) (separated, remain Params) {
-	separated = make(Params)
-	remain = make(Params)
+func separateParams(whole map[string][]string, keys ...string) (separated, remain map[string][]string) {
+	separated = make(map[string][]string)
+	remain = make(map[string][]string)
 	for k, v := range whole {
 		remain[k] = v
 	}
@@ -74,7 +74,7 @@ func separateParams(whole Params, keys ...string) (separated, remain Params) {
 	return
 }
 
-func separatePrefixParams(whole Params, prefix string) (separated, remain Params) {
+func separatePrefixParams(whole map[string][]string, prefix string) (separated, remain map[string][]string) {
 	keys := make([]string, 0)
 	for k := range whole {
 		if strings.HasPrefix(k, prefix) {
@@ -92,7 +92,7 @@ func ContentParams(c *gin.Context) (union, query, body map[string]interface{}) {
 		union = make(map[string]interface{})
 	}
 	if v, ok := c.Get(KeyParams); ok {
-		p := v.(Params)
+		p := v.(map[string][]string)
 		query = make(map[string]interface{})
 		for kk, vv := range p {
 			query[kk] = vv
