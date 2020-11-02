@@ -6,33 +6,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
-func buildPatchDog(r *gin.Engine) *gin.Engine {
-	g := r.Use(MiddlewareParams)
-	{
-		g.PATCH("/dogs/:id", func(c *gin.Context) {
-			config := Configuration{
-				DB:     gormDB,
-				Model:  &Dog{},
-				Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultPatchAction}},
-			}
-			c.Set(KeyConfig, &config)
-			return
-		})
-	}
-	return r
-}
-
 func TestDefaultPatchAction(t *testing.T) {
 	initTestDB()
-	r := buildPatchDog(router())
+	r := buildDogMiddlewareDefaultHandlerRouter(router())
 
 	jsonParams := []string{
 		`{"name":"patch-dog-name-1"}`,
-		// `{"name":"test-put-dog-2","foods":[{"id":1},{"id":2}]}`,
+		`{"name":"test-put-dog-2","foods":[{"id":1},{"id":2}]}`,
 	}
 
 	for _, jsonParam := range jsonParams {
