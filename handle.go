@@ -9,55 +9,15 @@ import (
 	"gorm.io/gorm/schema"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
-
-// DeleteHandle executes delete.
-func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
-	id := c.Param("id")
-	if err = validator.New().Var(id, "required,number"); err != nil {
-		return nil, err
-	}
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrConfigurationMissing
-	}
-
-	// TODO: associations
-
-	// if !config.IgnoreAssociations {
-	// 	sfs := config.DB.NewScope(config.Model).GetStructFields()
-	// 	for _, v := range sfs {
-	// 		if v.Relationship != nil {
-	// 			r := v.Relationship
-	// 			switch r.Kind {
-	// 			case string(schema.HasOne), string(schema.Many2Many):
-	// 				return nil, ErrUnknown
-	// 			case string(schema.HasMany):
-	// 				count := 0
-	// 				config.DB.Table(v.DBName).Where(fmt.Sprintf("%s = ?", r.ForeignDBNames[0]), id).Count(&count)
-	// 				if count > 0 {
-	// 					return nil, ErrHasAssociations
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	return nil, config.DB.Where(`id = ?`, id).Delete(config.Model).Error
-}
 
 // DefaultPostAction execute default post.
 func DefaultPostAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	_, _, bodyParams := ContentParams(c)
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrConfigurationMissing
+	config, err := ConfigurationWithContext(c)
+	if err != nil {
+		return nil, err
 	}
 	s, err := json.MarshalToString(bodyParams)
 	if err != nil {
@@ -80,29 +40,22 @@ func DefaultPostAction(c *gin.Context, actionConfig *Action, payload interface{}
 	return data, err
 }
 
-// PostHandle executes post.
-func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
+// ConfigurationWithContext ...
+func ConfigurationWithContext(c *gin.Context) (*Configuration, error) {
 	var config *Configuration
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
 		return nil, ErrConfigurationMissing
 	}
-
-	if err = c.ShouldBindJSON(config.Model); err != nil {
-		return nil, err
-	}
-
-	return nil, createModel(config.DB, config.Model)
+	return config, nil
 }
 
 // DefaultGetAction execute actions and returns response
 func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrConfigurationMissing
+	config, err := ConfigurationWithContext(c)
+	if err != nil {
+		return nil, err
 	}
 
 	paramsItr, ok := c.Get(KeyParams)
@@ -110,7 +63,7 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		logrus.WithError(ErrParamMissing).Error()
 		return nil, ErrParamMissing
 	}
-	params := paramsItr.(Params)
+	params := paramsItr.(map[string][]string)
 	filterParams, page, limit, offset := separatePage(params)
 	c.Set(KeyParams, filterParams)
 	if limit == 0 {

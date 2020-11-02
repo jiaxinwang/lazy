@@ -11,18 +11,16 @@ import (
 
 // DefaultDeleteAction ...
 func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrConfigurationMissing
+	config, err := ConfigurationWithContext(c)
+	if err != nil {
+		return nil, err
 	}
 	contextParams, err := params(c)
 	if err != nil {
 		return nil, ErrParamMissing
 	}
 
-	ids := valueSliceWithParamKey(*contextParams, "id")
+	ids := valueSliceWithParamKey(contextParams, "id")
 
 	m, err := schema.Parse(config.Model, schemaStore, schema.NamingStrategy{})
 
@@ -39,7 +37,6 @@ func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface
 		MapStruct(mapResult, cloned)
 
 		for _, v := range m.Relationships.Relations {
-			logrus.WithField("kind", "HasMany").Print(v.Name)
 			err = config.DB.Model(cloned).Association(v.Name).Clear()
 			if err != nil && err != gorm.ErrRecordNotFound {
 				logrus.WithError(err).Error()

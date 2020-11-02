@@ -12,38 +12,38 @@ func init() {
 }
 func Test_separateParams(t *testing.T) {
 	type args struct {
-		whole Params
+		whole map[string][]string
 		keys  []string
 	}
 	tests := []struct {
 		name          string
 		args          args
-		wantSeparated Params
-		wantRemain    Params
+		wantSeparated map[string][]string
+		wantRemain    map[string][]string
 	}{
 		{
 			"case-1",
-			args{whole: Params{"a": []string{`v1`, `v2`}}, keys: []string{`a`}},
-			Params{"a": []string{`v1`, `v2`}},
-			Params{},
+			args{whole: map[string][]string{"a": []string{`v1`, `v2`}}, keys: []string{`a`}},
+			map[string][]string{"a": []string{`v1`, `v2`}},
+			map[string][]string{},
 		},
 		{
 			"case-2",
-			args{whole: Params{"a": []string{`v1`, `v2`}}, keys: []string{}},
-			Params{},
-			Params{"a": []string{`v1`, `v2`}},
+			args{whole: map[string][]string{"a": []string{`v1`, `v2`}}, keys: []string{}},
+			map[string][]string{},
+			map[string][]string{"a": []string{`v1`, `v2`}},
 		},
 		{
 			"case-3",
-			args{whole: Params{"a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}}, keys: []string{`a`}},
-			Params{"a": []string{`v1`, `v2`}},
-			Params{"b": []string{`v3`, `v4`}},
+			args{whole: map[string][]string{"a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}}, keys: []string{`a`}},
+			map[string][]string{"a": []string{`v1`, `v2`}},
+			map[string][]string{"b": []string{`v3`, `v4`}},
 		},
 		{
 			"case-4",
-			args{whole: Params{"a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}}, keys: []string{`c`}},
-			Params{},
-			Params{"a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}},
+			args{whole: map[string][]string{"a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}}, keys: []string{`c`}},
+			map[string][]string{},
+			map[string][]string{"a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}},
 		},
 	}
 	for _, tt := range tests {
@@ -61,38 +61,38 @@ func Test_separateParams(t *testing.T) {
 
 func Test_separatePrefixParams(t *testing.T) {
 	type args struct {
-		whole  Params
+		whole  map[string][]string
 		prefix string
 	}
 	tests := []struct {
 		name          string
 		args          args
-		wantSeparated Params
-		wantRemain    Params
+		wantSeparated map[string][]string
+		wantRemain    map[string][]string
 	}{
 		{
 			"case-1",
-			args{whole: Params{"p_a": []string{`v1`, `v2`}}, prefix: `p_`},
-			Params{"p_a": []string{`v1`, `v2`}},
-			Params{},
+			args{whole: map[string][]string{"p_a": []string{`v1`, `v2`}}, prefix: `p_`},
+			map[string][]string{"p_a": []string{`v1`, `v2`}},
+			map[string][]string{},
 		},
 		{
 			"case-2",
-			args{whole: Params{"a": []string{`v1`, `v2`}}, prefix: `p_`},
-			Params{},
-			Params{"a": []string{`v1`, `v2`}},
+			args{whole: map[string][]string{"a": []string{`v1`, `v2`}}, prefix: `p_`},
+			map[string][]string{},
+			map[string][]string{"a": []string{`v1`, `v2`}},
 		},
 		{
 			"case-3",
-			args{whole: Params{"p_a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}}, prefix: `p_`},
-			Params{"p_a": []string{`v1`, `v2`}},
-			Params{"b": []string{`v3`, `v4`}},
+			args{whole: map[string][]string{"p_a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}}, prefix: `p_`},
+			map[string][]string{"p_a": []string{`v1`, `v2`}},
+			map[string][]string{"b": []string{`v3`, `v4`}},
 		},
 		{
 			"case-4",
-			args{whole: Params{"p_a": []string{`v1`, `v2`}, "p_b": []string{`v3`, `v4`}}, prefix: `p_`},
-			Params{"p_a": []string{`v1`, `v2`}, "p_b": []string{`v3`, `v4`}},
-			Params{},
+			args{whole: map[string][]string{"p_a": []string{`v1`, `v2`}, "p_b": []string{`v3`, `v4`}}, prefix: `p_`},
+			map[string][]string{"p_a": []string{`v1`, `v2`}, "p_b": []string{`v3`, `v4`}},
+			map[string][]string{},
 		},
 	}
 	for _, tt := range tests {
@@ -110,31 +110,31 @@ func Test_separatePrefixParams(t *testing.T) {
 
 func Test_separatePage(t *testing.T) {
 	type args struct {
-		params Params
+		params map[string][]string
 	}
 	tests := []struct {
 		name       string
 		args       args
-		wantRemain Params
+		wantRemain map[string][]string
 		wantPage   uint64
 		wantLimit  uint64
 		wantOffset uint64
 	}{
-		{`case-1`, args{params: Params{}}, Params{}, 0, 0, 0},
+		{`case-1`, args{params: map[string][]string{}}, map[string][]string{}, 0, 0, 0},
 		{
 			`case-2`,
-			args{params: Params{`offset`: []string{`10`}, `limit`: []string{`2`}, `page`: []string{`3`}}},
-			Params{}, 3, 2, 10,
+			args{params: map[string][]string{`offset`: []string{`10`}, `limit`: []string{`2`}, `page`: []string{`3`}}},
+			map[string][]string{}, 3, 2, 10,
 		},
 		{
 			`case-3`,
-			args{params: Params{`offset`: []string{`10`, `20`}, `limit`: []string{`2`}, `page`: []string{`3`}}},
-			Params{}, 3, 2, 0,
+			args{params: map[string][]string{`offset`: []string{`10`, `20`}, `limit`: []string{`2`}, `page`: []string{`3`}}},
+			map[string][]string{}, 3, 2, 0,
 		},
 		{
 			`case-4`,
-			args{params: Params{`unused`: []string{`used`}, `offset`: []string{`10`, `20`}, `limit`: []string{`2`}, `page`: []string{`3`}}},
-			Params{`unused`: []string{`used`}}, 3, 2, 0,
+			args{params: map[string][]string{`unused`: []string{`used`}, `offset`: []string{`10`, `20`}, `limit`: []string{`2`}, `page`: []string{`3`}}},
+			map[string][]string{`unused`: []string{`used`}}, 3, 2, 0,
 		},
 	}
 	for _, tt := range tests {
