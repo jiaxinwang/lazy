@@ -12,7 +12,7 @@ import (
 
 func TestDefaultGetAction(t *testing.T) {
 	initTestDB()
-	r := buildDogMiddlewareDefaultHandlerRouter(router())
+	r := defaultDogRouter(router())
 	w := httptest.NewRecorder()
 
 	// GET

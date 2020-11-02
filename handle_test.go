@@ -22,7 +22,7 @@ func router() *gin.Engine {
 	return r
 }
 
-func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
+func defaultDogRouter(r *gin.Engine) *gin.Engine {
 	r.GET("/dogs", func(c *gin.Context) {
 		config := Configuration{
 			DB:        gormDB,
@@ -71,6 +71,17 @@ func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
 			Table:  "dogs",
 			Model:  &Dog{},
 			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultPutAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
+
+	r.POST("/dogs/:id/toys", func(c *gin.Context) {
+		config := Configuration{
+			DB:     gormDB,
+			Table:  "dogs",
+			Model:  &Dog{},
+			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultRelatedPostAction}},
 		}
 		c.Set(KeyConfig, &config)
 		return

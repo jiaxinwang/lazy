@@ -12,11 +12,9 @@ import (
 
 func TestDefaultDeleteAction(t *testing.T) {
 	initTestDB()
-	r := buildDogMiddlewareDefaultHandlerRouter(router())
+	r := defaultDogRouter(router())
 	w := httptest.NewRecorder()
 
-	// GET
-	// req, _ := http.NewRequest("DELETE", "/dogs/:id", nil)
 	req, _ := http.NewRequest("DELETE", "/dogs/6", nil)
 
 	q := req.URL.Query()
