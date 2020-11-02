@@ -61,9 +61,3 @@ func Test_createModel(t *testing.T) {
 	// logrus.Printf("%+v", dog)
 
 }
-
-func Test_queryAssociated(t *testing.T) {
-	initTestDB()
-	gotRet := queryAssociated(gormDB, "dogs", "id", 1)
-	assert.Equal(t, len(gotRet), 1)
-}

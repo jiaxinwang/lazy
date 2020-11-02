@@ -65,7 +65,16 @@ func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
 		c.Set(KeyConfig, &config)
 		return
 	})
-	// }
+	r.PUT("/dogs/:id", func(c *gin.Context) {
+		config := Configuration{
+			DB:     gormDB,
+			Table:  "dogs",
+			Model:  &Dog{},
+			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultPutAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
 
 	return r
 }

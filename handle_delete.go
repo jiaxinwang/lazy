@@ -37,7 +37,6 @@ func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface
 		MapStruct(mapResult, cloned)
 
 		for _, v := range m.Relationships.Relations {
-			logrus.WithField("kind", "HasMany").Print(v.Name)
 			err = config.DB.Model(cloned).Association(v.Name).Clear()
 			if err != nil && err != gorm.ErrRecordNotFound {
 				logrus.WithError(err).Error()

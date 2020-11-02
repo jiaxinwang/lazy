@@ -6,31 +6,27 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 )
 
-func genContent() *gin.Context {
-	w := httptest.NewRecorder()
-	context, _ := gin.CreateTestContext(w)
-	return context
-}
-
-func TestDefaultPostAction(t *testing.T) {
+func TestDefaultPutAction(t *testing.T) {
 	initTestDB()
 	r := buildDogMiddlewareDefaultHandlerRouter(router())
 	jsonParams := []string{
-		`{"name":"test-post-dog-1"}`,
-		`{"name":"test-post-dog-2","foods":[{"id":1},{"id":2}]}`,
+		`{"name":"test-put-dog-1"}`,
+		`{"name":"test-put-dog-2","foods":[{"id":1},{"id":2}]}`,
 	}
 
 	for _, jsonParam := range jsonParams {
 		w := httptest.NewRecorder()
-
 		contentBuffer := bytes.NewBuffer([]byte(jsonParam))
-		req, _ := http.NewRequest("POST", "/dogs", contentBuffer)
+		req, _ := http.NewRequest("PUT", "/dogs/1", contentBuffer)
+
+		// q := req.URL.Query()
+		// q.Add("id", `1`)
+		// req.URL.RawQuery = q.Encode()
 
 		r.ServeHTTP(w, req)
 		response := Response{}
