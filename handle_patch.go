@@ -5,23 +5,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// PatchHandle executes post.
-func PatchHandle(c *gin.Context) (data []map[string]interface{}, err error) {
-	// var config *Configuration
-	// if v, ok := c.Get(KeyConfig); ok {
-	// 	config = v.(*Configuration)
-	// } else {
-	// 	return nil, ErrConfigurationMissing
-	// }
-
-	// if err = c.ShouldBindJSON(config.Model); err != nil {
-	// 	return nil, err
-	// }
-
-	// return nil, createModel(config.DB, config.Model)
-	return nil, nil
-}
-
 // DefaultPatchAction ...
 func DefaultPatchAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	id := c.Param("id")

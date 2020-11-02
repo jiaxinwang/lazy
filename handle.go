@@ -80,22 +80,6 @@ func DefaultPostAction(c *gin.Context, actionConfig *Action, payload interface{}
 	return data, err
 }
 
-// PostHandle executes post.
-func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrConfigurationMissing
-	}
-
-	if err = c.ShouldBindJSON(config.Model); err != nil {
-		return nil, err
-	}
-
-	return nil, createModel(config.DB, config.Model)
-}
-
 // DefaultGetAction execute actions and returns response
 func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	var config *Configuration
