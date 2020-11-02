@@ -8,7 +8,6 @@ import (
 // Configuration configs lazy values and actions
 type Configuration struct {
 	DB        *gorm.DB
-	Columms   string
 	Model     interface{}
 	NeedCount bool
 	Action    []Action
@@ -25,7 +24,6 @@ type JSONPathMap struct {
 // Action ...
 type Action struct {
 	DB         *gorm.DB
-	Columms    string
 	Model      interface{}
 	Params     []JSONPathMap
 	ResultMaps []JSONPathMap
