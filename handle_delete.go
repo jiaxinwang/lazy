@@ -29,6 +29,7 @@ func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface
 	for _, vID := range ids {
 		priDBName := m.PrimaryFieldDBNames[0]
 		mapResult := map[string]interface{}{}
+		// TODO: batch
 		err := config.DB.Model(config.Model).Where(fmt.Sprintf("%s = ?", priDBName), vID).Find(&mapResult).Error
 		if err != nil {
 			logrus.WithError(err).Warn()
