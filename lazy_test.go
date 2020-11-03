@@ -164,9 +164,9 @@ func initTestDB() {
 
 	dog := &Dog{Name: "Charlie", OwnerID: 1, BreedID: 1}
 	gormDB.Create(dog)
-	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
+	gormDB.Model(dog).Association("Foods").Append(pedigree)
 	// gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
-	gormDB.Model(dog).Association("Toys").Append(&Toy{Name: `Tug`}, &Toy{Name: `Toss`})
+	// gormDB.Model(dog).Association("Toys").Append(&Toy{Name: `Tug`}, &Toy{Name: `Toss`})
 
 	dog = &Dog{Name: "Max", OwnerID: 2, BreedID: 2}
 	gormDB.Create(dog)

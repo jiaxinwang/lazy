@@ -80,6 +80,16 @@ func defaultDogRouter(r *gin.Engine) *gin.Engine {
 		return
 	})
 
+	r.POST("/dogs/:id/foods", func(c *gin.Context) {
+		config := Configuration{
+			DB:     gormDB,
+			Model:  &Dog{},
+			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultRelatedPostAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
+
 	return r
 }
 

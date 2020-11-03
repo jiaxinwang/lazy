@@ -87,6 +87,30 @@ func toTimeHookFunc() mapstructure.DecodeHookFunc {
 	}
 }
 
+// Map2StructWithJSON ...
+func Map2StructWithJSON(input map[string]interface{}, result interface{}) (err error) {
+	var s string
+	if s, err = json.MarshalToString(input); err != nil {
+		return fmt.Errorf("can't json marshal: %w", err)
+	}
+	if err = json.UnmarshalFromString(s, result); err != nil {
+		return fmt.Errorf("can't json unmarshal: %w", err)
+	}
+	return
+}
+
+// MapSlice2StructSliceWithJSON ...
+func MapSlice2StructSliceWithJSON(input []map[string]interface{}, result *[]interface{}) (err error) {
+	var s string
+	if s, err = json.MarshalToString(input); err != nil {
+		return fmt.Errorf("can't json marshal: %w", err)
+	}
+	if err = json.UnmarshalFromString(s, result); err != nil {
+		return fmt.Errorf("can't json unmarshal: %w", err)
+	}
+	return
+}
+
 // MapStruct converts map to struct
 func MapStruct(input map[string]interface{}, result interface{}) error {
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
