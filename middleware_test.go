@@ -37,7 +37,7 @@ func TestMiddlewareParams(t *testing.T) {
 
 func TestMiddlewareDefaultHandlerPOST(t *testing.T) {
 	initTestDB()
-	r := buildDogMiddlewareDefaultHandlerRouter(router())
+	r := defaultDogRouter(router())
 	w := httptest.NewRecorder()
 
 	body := `{"name":"test-put-dog-2","foods":[{"id":1},{"id":2}]}`

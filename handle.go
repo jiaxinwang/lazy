@@ -203,10 +203,9 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	}
 
 	logrus.WithField("count", count).Trace()
-	config.Results = modelResults
 	c.Set(keyCount, count)
-	c.Set(keyData, config.Results)
-	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
+	c.Set(keyData, modelResults)
+	c.Set(keyResults, map[string]interface{}{"count": count, "items": modelResults})
 	return
 }
 

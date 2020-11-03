@@ -11,7 +11,7 @@ import (
 
 func TestDefaultPatchAction(t *testing.T) {
 	initTestDB()
-	r := buildDogMiddlewareDefaultHandlerRouter(router())
+	r := defaultDogRouter(router())
 
 	jsonParams := []string{
 		`{"name":"patch-dog-name-1"}`,

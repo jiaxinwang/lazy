@@ -22,14 +22,11 @@ func router() *gin.Engine {
 	return r
 }
 
-func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
+func defaultDogRouter(r *gin.Engine) *gin.Engine {
 	r.GET("/dogs", func(c *gin.Context) {
 		config := Configuration{
 			DB:        gormDB,
-			Table:     "dogs",
-			Columms:   "*",
 			Model:     &Dog{},
-			Results:   []interface{}{},
 			NeedCount: true,
 			Action:    []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultGetAction}},
 		}
@@ -38,11 +35,9 @@ func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
 	})
 	r.DELETE("/dogs/:id", func(c *gin.Context) {
 		config := Configuration{
-			DB:      gormDB,
-			Table:   "dogs",
-			Columms: "*",
-			Model:   &Dog{},
-			Action:  []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultDeleteAction}},
+			DB:     gormDB,
+			Model:  &Dog{},
+			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultDeleteAction}},
 		}
 		c.Set(KeyConfig, &config)
 		return
@@ -68,9 +63,28 @@ func buildDogMiddlewareDefaultHandlerRouter(r *gin.Engine) *gin.Engine {
 	r.PUT("/dogs/:id", func(c *gin.Context) {
 		config := Configuration{
 			DB:     gormDB,
-			Table:  "dogs",
 			Model:  &Dog{},
 			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultPutAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
+
+	r.POST("/dogs/:id/toys", func(c *gin.Context) {
+		config := Configuration{
+			DB:     gormDB,
+			Model:  &Dog{},
+			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultRelatedPostAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
+
+	r.POST("/dogs/:id/foods", func(c *gin.Context) {
+		config := Configuration{
+			DB:     gormDB,
+			Model:  &Dog{},
+			Action: []Action{{DB: gormDB, Model: &Dog{}, Action: DefaultRelatedPostAction}},
 		}
 		c.Set(KeyConfig, &config)
 		return
@@ -89,10 +103,7 @@ func TestDefaultHTTPActionMiddleware(t *testing.T) {
 			payload := &HTTPRequest{"https://httpbin.org/anything/1", "GET", 1}
 			config := Configuration{
 				DB:        gormDB,
-				Table:     "dogs",
-				Columms:   "*",
 				Model:     &Dog{},
-				Results:   []interface{}{},
 				NeedCount: true,
 				Action:    []Action{{DB: gormDB, Payload: payload, Action: DefaultHTTPRequestAction}},
 			}

@@ -13,7 +13,7 @@ import (
 
 func TestDefaultPutAction(t *testing.T) {
 	initTestDB()
-	r := buildDogMiddlewareDefaultHandlerRouter(router())
+	r := defaultDogRouter(router())
 	jsonParams := []string{
 		`{"name":"test-put-dog-1"}`,
 		`{"name":"test-put-dog-2","foods":[{"id":1},{"id":2}]}`,

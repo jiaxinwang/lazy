@@ -24,8 +24,6 @@ func DefaultPatchAction(c *gin.Context, actionConfig *Action, payload interface{
 	}
 	bodyParams[`id`] = id
 
-	// ids :=
-
 	config, err := ConfigurationWithContext(c)
 	if err != nil {
 		return nil, err

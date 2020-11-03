@@ -1,6 +1,8 @@
 package lazy
 
 import (
+	"strings"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
@@ -20,4 +22,12 @@ func relationships(db *gorm.DB, model interface{}) (relationships schema.Relatio
 	}
 
 	return m.Relationships, nil
+}
+
+func query2Map(db *gorm.DB, condition string, where []interface{}, table string) (result []map[string]interface{}, err error) {
+	result = []map[string]interface{}{}
+	if !strings.EqualFold(condition, "") {
+		return result, db.Table(table).Where(condition, where).Find(&result).Error
+	}
+	return result, db.Table(table).Find(&result).Error
 }
