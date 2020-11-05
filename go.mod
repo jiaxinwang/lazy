@@ -3,12 +3,11 @@ module github.com/jiaxinwang/lazy
 go 1.14
 
 require (
-	github.com/Masterminds/squirrel v1.4.0
 	github.com/adam-hanna/arrayOperations v0.2.6
 	github.com/antchfx/jsonquery v1.1.4
 	github.com/antonfisher/nested-logrus-formatter v1.3.0
 	github.com/gin-gonic/gin v1.6.3
-	github.com/go-playground/validator/v10 v10.3.0
+	github.com/go-playground/validator/v10 v10.3.0 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/google/go-cmp v0.5.1
 	github.com/jiaxinwang/common v0.0.0-20200723021910-0f7b2f8d1d32
