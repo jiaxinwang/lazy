@@ -355,7 +355,6 @@ func assembleBelongTo(self []interface{}, foreign []map[string]interface{}, prim
 	for _, vSelf := range self {
 		var exp interface{}
 		value, err := valueOfField(vSelf, primaryKeyName)
-		logrus.Print("value=", value)
 		if err != nil {
 			return nil, err
 		}

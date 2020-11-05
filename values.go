@@ -9,12 +9,10 @@ import (
 	"strings"
 	"time"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/adam-hanna/arrayOperations"
 	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
@@ -404,116 +402,6 @@ func URLValues(s interface{}, q map[string][]string) (eqm map[string][]interface
 	gtem = Tag(s, gte)
 	ltem = Tag(s, lte)
 	return
-}
-
-// SelectBuilder ...
-func SelectBuilder(s sq.SelectBuilder, eq map[string][]interface{}, gt, lt, gte, lte map[string]interface{}) sq.SelectBuilder {
-	if eq != nil {
-		for k, v := range eq {
-			switch {
-			case len(v) == 1:
-				eqs := sq.Eq{k: v[0]}
-				s = s.Where(eqs)
-			case len(v) > 1:
-				eqs := sq.Eq{k: v}
-				s = s.Where(eqs)
-			}
-		}
-	}
-	if gt != nil && len(gt) > 0 {
-		m := sq.Gt(gt)
-		s = s.Where(m)
-	}
-	if lt != nil && len(lt) > 0 {
-		m := sq.Lt(lt)
-		s = s.Where(m)
-	}
-	if gte != nil && len(gte) > 0 {
-		m := sq.GtOrEq(gte)
-		s = s.Where(m)
-	}
-	if lte != nil && len(lte) > 0 {
-		m := sq.LtOrEq(lte)
-		s = s.Where(m)
-	}
-	return s
-}
-
-// SelectEq ...
-func SelectEq(db *gorm.DB, table, columms string, eq map[string][]interface{}) (ret []map[string]interface{}, err error) {
-	sel := sq.Select(columms).From(table)
-	sel = SelectBuilder(sel, eq, nil, nil, nil, nil)
-	return ExecSelect(db, sel)
-}
-
-// ExecSelect ...
-func ExecSelect(db *gorm.DB, active sq.SelectBuilder) (ret []map[string]interface{}, err error) {
-	ret = make([]map[string]interface{}, 0)
-	sql, args, err := active.ToSql()
-	if err != nil {
-		return ret, err
-	}
-
-	rows, sqlErr := db.Raw(sql, args...).Rows()
-
-	defer rows.Close()
-	if sqlErr != nil {
-		return ret, sqlErr
-	}
-
-	columns, err := rows.Columns()
-	if err != nil {
-		return ret, err
-	}
-	length := len(columns)
-	for rows.Next() {
-		current := makeResultReceiver(length)
-		if err := rows.Scan(current...); err != nil {
-			return ret, err
-		}
-		value := make(map[string]interface{})
-		for i := 0; i < length; i++ {
-			k := columns[i]
-			val := *(current[i]).(*interface{})
-			if val == nil {
-				value[k] = nil
-				continue
-			}
-			vType := reflect.TypeOf(val)
-			switch vType.String() {
-			case "uint8":
-				value[k] = val.(int8)
-			case "uint16":
-				value[k] = val.(int16)
-			case "uint32":
-				value[k] = val.(int32)
-			case "uint64":
-				value[k] = val.(int64)
-			case "int8":
-				value[k] = val.(int8)
-			case "int16":
-				value[k] = val.(int16)
-			case "int32":
-				value[k] = val.(int32)
-			case "int64":
-				value[k] = val.(int64)
-			case "bool":
-				value[k] = val.(bool)
-			case "string":
-				value[k] = val.(string)
-			case "time.Time":
-				value[k] = val.(time.Time)
-			case "[]uint8":
-				value[k] = string(val.([]uint8))
-			default:
-				// logrus.Warnf("unsupport data type '%s' now\n", vType)
-			}
-		}
-		ret = append(ret, value)
-	}
-
-	return ret, nil
-
 }
 
 func makeResultReceiver(length int) []interface{} {
