@@ -191,8 +191,8 @@ func dbNameWithFieldName(v interface{}, fieldName string) (string, error) {
 
 }
 
-// RelationQueryParam ...
-type RelationQueryParam struct {
+// HasManyQueryParam ...
+type HasManyQueryParam struct {
 	Name    string
 	DotName string
 	PTable  string
@@ -200,18 +200,26 @@ type RelationQueryParam struct {
 	Values  []interface{}
 }
 
+// Many2ManyQueryParam ...
+type Many2ManyQueryParam struct {
+	Name                      string
+	JoinTable                 string
+	JoinTableFieldName        string
+	JoinTableForeignFieldName string
+	Values                    []interface{}
+}
+
 // QueryParam ...
 type QueryParam struct {
-	Model interface{}
-	Eq    map[string][]interface{}
-	Lt    map[string][]interface{}
-	Gt    map[string][]interface{}
-	Lte   map[string][]interface{}
-	Gte   map[string][]interface{}
-	Like  map[string][]interface{}
-	// HasMany   map[string][]interface{}
-	HasMany   map[string]RelationQueryParam
-	Many2Many map[string][]interface{}
+	Model     interface{}
+	Eq        map[string][]interface{}
+	Lt        map[string][]interface{}
+	Gt        map[string][]interface{}
+	Lte       map[string][]interface{}
+	Gte       map[string][]interface{}
+	Like      map[string][]interface{}
+	HasMany   map[string]HasManyQueryParam
+	Many2Many map[string]Many2ManyQueryParam
 	Page      int
 	Limit     int
 	Offset    int
@@ -239,8 +247,8 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 	queryParam.Gte = make(map[string][]interface{})
 	queryParam.Lte = make(map[string][]interface{})
 	queryParam.Like = make(map[string][]interface{})
-	queryParam.HasMany = make(map[string]RelationQueryParam)
-	queryParam.Many2Many = make(map[string][]interface{})
+	queryParam.HasMany = make(map[string]HasManyQueryParam)
+	queryParam.Many2Many = make(map[string]Many2ManyQueryParam)
 
 	if v, ok := valueOfMap(params, "offset"); ok {
 		if offset, err := strconv.Atoi(v[0]); err == nil {
@@ -280,8 +288,7 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 			case schema.HasMany:
 				key := fmt.Sprintf("%s", jsonKey)
 				if vOfMap, ok := valueOfMap(params, key); ok {
-
-					queryParam.HasMany[jsonKey] = RelationQueryParam{
+					queryParam.HasMany[jsonKey] = HasManyQueryParam{
 						Name:    fmt.Sprintf("%s__%s", vField.StructField.Name, "id"),
 						DotName: fmt.Sprintf("%s.%s", vField.Name, "id"),
 						Table:   vField.StructField.Name,
@@ -291,8 +298,15 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 				}
 			case schema.Many2Many:
 				key := fmt.Sprintf("%s", jsonKey)
-				if v, ok := valueOfMap(params, key); ok {
-					queryParam.Many2Many[jsonKey] = toGenericArray(v)
+				if vOfMap, ok := valueOfMap(params, key); ok {
+					queryParam.Many2Many[jsonKey] = Many2ManyQueryParam{
+						JoinTable:                 v.JoinTable.Name,
+						JoinTableFieldName:        v.JoinTable.Fields[0].DBName,
+						JoinTableForeignFieldName: v.JoinTable.Fields[1].DBName,
+						Values:                    toGenericArray(vOfMap),
+					}
+
+					// queryParam.Many2Many[jsonKey] = toGenericArray(v)
 				}
 			}
 

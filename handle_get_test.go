@@ -108,3 +108,44 @@ func TestDefaultGetActionParamsHasMany(t *testing.T) {
 
 	assert.Equal(t, dbRet.ID, ret.Items[0].ID)
 }
+
+func TestDefaultGetActionParamsMany2Many(t *testing.T) {
+	initTestDB()
+	r := defaultDogRouter(router())
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/dogs", nil)
+
+	q := req.URL.Query()
+	q.Add("foods", `2`)
+	req.URL.RawQuery = q.Encode()
+
+	r.ServeHTTP(w, req)
+	response := Response{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, 200, w.Code)
+	assert.NoError(t, err)
+	var ret Ret
+	MapStruct(response.Data.(map[string]interface{}), &ret)
+
+	// logrus.Printf("%+v", ret.Items)
+
+	for _, v := range ret.Items {
+		logrus.Print(v.ID)
+		for _, vFood := range v.Foods {
+			if vFood.ID == 2 {
+				logrus.Print("-->", v.ID)
+			}
+		}
+	}
+
+	// var results []map[string]interface{}
+	// var dbRet Dog
+	// gormDB.Model(&Dog{}).Joins("Foods").Where("Foods__id = 2").Find(&results)
+	// logrus.Print(results)
+
+	// assert.Equal(t, len(results), 1)
+	// MapStruct(results[0], &dbRet)
+
+	// assert.Equal(t, dbRet.ID, ret.Items[0].ID)
+}

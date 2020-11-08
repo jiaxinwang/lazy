@@ -85,6 +85,17 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		logrus.WithError(err).Error()
 	}
 
+	for _, v := range qParams.Many2Many {
+		var ids []int64
+		config.DB.Table(v.JoinTable).Where(fmt.Sprintf("%s in ?", v.JoinTableForeignFieldName), v.Values).Pluck(v.JoinTableFieldName, &ids)
+		if len(ids) > 0 {
+			qParams.Eq["id"] = make([]interface{}, 0)
+			for _, vIds := range ids {
+				qParams.Eq["id"] = append(qParams.Eq["id"], vIds)
+			}
+		}
+	}
+
 	for k, v := range qParams.Eq {
 		tx = tx.Where(fmt.Sprintf("%s IN ?", k), v)
 	}
@@ -106,8 +117,7 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	name := ""
 	ptable := ""
 
-	for k, v := range qParams.HasMany {
-		logrus.WithField("kk", k).WithField("v", v).Info("has many")
+	for _, v := range qParams.HasMany {
 		tx = tx.Joins(v.Table).Where(fmt.Sprintf("%s IN ?", v.Name), v.Values)
 		dotName = v.DotName
 		name = v.Name
@@ -115,9 +125,13 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		needGroup = true
 	}
 
-	for k, v := range qParams.Many2Many {
-		logrus.WithField("kk", k).WithField("v", v).Info()
-	}
+	// for k, v := range qParams.Many2Many {
+	// 	logrus.WithField("kk", k).WithField("v", v).Info()
+	// 	var ids []int64
+	// 	config.DB.Table(v.JoinTable).Where(fmt.Sprintf("%s in ?", v.JoinTableForeignFieldName), v.Values).Pluck(v.JoinTableFieldName, &ids)
+	// 	logrus.Print(ids)
+	// 	qParams.Eq["id"] = toGenericArray(ids)
+	// }
 
 	tx.Limit(int(qParams.Limit)).Offset(int(qParams.Limit*qParams.Page + qParams.Offset)).Find(&mapResults)
 
