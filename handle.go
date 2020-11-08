@@ -82,6 +82,13 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	}
 
 	eq, gt, lt, gte, lte := URLValues(config.Model, params)
+	logrus.WithFields(logrus.Fields{
+		"eq":  eq,
+		"gt":  gt,
+		"lt":  lt,
+		"gte": gte,
+		"lte": lte,
+	}).Info()
 	tx := config.DB.Model(config.Model)
 
 	for k, v := range eq {

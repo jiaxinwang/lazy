@@ -15,7 +15,6 @@ func TestDefaultGetAction(t *testing.T) {
 	r := defaultDogRouter(router())
 	w := httptest.NewRecorder()
 
-	// GET
 	req, _ := http.NewRequest("GET", "/dogs", nil)
 
 	q := req.URL.Query()
@@ -30,7 +29,6 @@ func TestDefaultGetAction(t *testing.T) {
 
 	r.ServeHTTP(w, req)
 	response := Response{}
-	logrus.WithField("string", w.Body.String()).Debug()
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, 200, w.Code)
 	assert.NoError(t, err)
@@ -53,4 +51,30 @@ func TestDefaultGetAction(t *testing.T) {
 
 	// assert.Equal(t, ret.Items[0].Name, dog1.Name)
 
+}
+
+func TestDefaultGetActionParams(t *testing.T) {
+	initTestDB()
+	r := defaultDogRouter(router())
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/dogs", nil)
+
+	q := req.URL.Query()
+	q.Add("name", `Max`)
+	// q.Add("id", `2`)
+	req.URL.RawQuery = q.Encode()
+
+	var dog1 Dog
+	gormDB.Where("name = Max").Preload("Toys").Preload("Foods").Preload("Owner").Find(&dog1)
+	logrus.Printf("%#v", dog1)
+
+	r.ServeHTTP(w, req)
+	response := Response{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, 200, w.Code)
+	assert.NoError(t, err)
+	var ret Ret
+	MapStruct(response.Data.(map[string]interface{}), &ret)
+	logrus.WithField("ret", fmt.Sprintf("%+v", ret)).Info()
 }

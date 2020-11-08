@@ -4,121 +4,90 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestBeforeParams(t *testing.T) {
+func Test_valueOfMap(t *testing.T) {
+	map1 := map[string][]string{
+		"limit":  {"10"},
+		"offset": {"500"},
+		"page":   {"2"},
+		"body":   {"1", "2", "3"},
+	}
+
 	type args struct {
 		params map[string][]string
+		key    string
 	}
 	tests := []struct {
-		name        string
-		args        args
-		wantEq      map[string][]string
-		wantGt      map[string]string
-		wantLt      map[string]string
-		wantGte     map[string]string
-		wantLte     map[string]string
-		wantReduced map[string][]string
+		name      string
+		args      args
+		wantValue []string
+		wantOk    bool
 	}{
-		{
-			"empty",
-			args{
-				map[string][]string{
-					"before_name":           []string{"tom"},
-					"before_created_at_lte": []string{"2000-01-01"},
-					"before_w_lt":           []string{"0.01"},
-					"w_lt":                  []string{"0.02"},
-					"before_age_gt":         []string{"18"},
-					"age_gt":                []string{"19"},
-					"before_p_gte":          []string{"32"},
-					"gte":                   []string{"33"},
-					"size":                  []string{"12"},
-					"page":                  []string{"2"},
-					"offset":                []string{"100"},
-				},
-			},
-			map[string][]string{"name": []string{"tom"}},
-			map[string]string{"age": "18"},
-			map[string]string{"w": "0.01"},
-			map[string]string{"p": "32"},
-			map[string]string{"created_at": "2000-01-01"},
-			map[string][]string{
-				"w_lt":   []string{"0.02"},
-				"age_gt": []string{"19"},
-				"gte":    []string{"33"},
-				"size":   []string{"12"},
-				"page":   []string{"2"},
-				"offset": []string{"100"},
-			},
-		},
+		{"limit", args{map1, "limit"}, []string{"10"}, true},
+		{"offset", args{map1, "offset"}, []string{"500"}, true},
+		{"page", args{map1, "page"}, []string{"2"}, true},
+		{"body", args{map1, "body"}, []string{"1", "2", "3"}, true},
+		{"none", args{map1, "none"}, []string{}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotEq, gotGt, gotLt, gotGte, gotLte, gotReduced := BeforeLazy(tt.args.params)
-			if !cmp.Equal(gotEq, tt.wantEq) {
-				t.Errorf("BeforeParams() gotEq = %v, want %v\ndiff=%v", gotEq, tt.wantEq, cmp.Diff(gotEq, tt.wantEq))
+			gotValue, gotOk := valueOfMap(tt.args.params, tt.args.key)
+			if !cmp.Equal(gotValue, tt.wantValue) {
+				t.Errorf("valueOfMap() gotValue = %v, want %v\ndiff=%v", gotValue, tt.wantValue, cmp.Diff(gotValue, tt.wantValue))
 			}
-			if !cmp.Equal(gotGt, tt.wantGt) {
-				t.Errorf("BeforeParams() gotGt = %v, want %v\ndiff=%v", gotGt, tt.wantGt, cmp.Diff(gotGt, tt.wantGt))
-			}
-			if !cmp.Equal(gotLt, tt.wantLt) {
-				t.Errorf("BeforeParams() gotLt = %v, want %v\ndiff=%v", gotLt, tt.wantLt, cmp.Diff(gotLt, tt.wantLt))
-			}
-			if !cmp.Equal(gotGte, tt.wantGte) {
-				t.Errorf("BeforeParams() gotGte = %v, want %v\ndiff=%v", gotGte, tt.wantGte, cmp.Diff(gotGte, tt.wantGte))
-			}
-			if !cmp.Equal(gotLte, tt.wantLte) {
-				t.Errorf("BeforeParams() gotLte = %v, want %v\ndiff=%v", gotLte, tt.wantLte, cmp.Diff(gotLte, tt.wantLte))
-			}
-			if !cmp.Equal(gotReduced, tt.wantReduced) {
-				t.Errorf("BeforeParams() gotReduced = %v, want %v\ndiff=%v", gotReduced, tt.wantReduced, cmp.Diff(gotReduced, tt.wantReduced))
+			if gotOk != tt.wantOk {
+				t.Errorf("valueOfMap() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
 		})
 	}
 }
 
-func Test_mergeValues(t *testing.T) {
+func Test_splitParams1(t *testing.T) {
 	type args struct {
-		a map[string][]string
-		b map[string][]string
+		model  interface{}
+		params map[string][]string
 	}
+	// zeroQueryParam := QueryParam{}
 	tests := []struct {
-		name    string
-		args    args
-		wantRet map[string][]string
+		name           string
+		args           args
+		wantQueryParam QueryParam
+		wantErr        bool
 	}{
-		{
-			"test 1",
-			args{
-				a: map[string][]string{"dog": []string{"a", "b", "c"}},
-				b: map[string][]string{"dog": []string{"c", "e"}},
-			},
-			map[string][]string{"dog": []string{"a", "b", "c", "e"}},
-		},
-		{
-			"test 2",
-			args{
-				a: map[string][]string{"dog0": []string{"a", "b", "c"}},
-				b: map[string][]string{"dog1": []string{"c", "e"}},
-			},
+		// TODO: Add test cases.
+		{"1", args{&Dog{},
 			map[string][]string{
-				"dog0": []string{"a", "b", "c"},
-				"dog1": []string{"c", "e"},
-			},
-		},
+				"none":           {"none"},
+				"name":           {"name"},
+				"name_like":      {"%%"},
+				"created_at_lt":  {"2020-01-01 09:00:00"},
+				"created_at_gt":  {"2020-01-01 10:00:00"},
+				"created_at_lte": {"2020-01-01 11:00:00"},
+				"created_at_gte": {"2020-01-01 12:00:00"},
+				"foods":          {"1"},
+				"toys":           {"2"},
+			}},
+			QueryParam{
+				Eq:        map[string][]interface{}{"name": {[]string{"name"}}},
+				Lt:        map[string][]interface{}{"created_at": {[]string{"2020-01-01 09:00:00"}}},
+				Lte:       map[string][]interface{}{"created_at": {[]string{"2020-01-01 11:00:00"}}},
+				Gt:        map[string][]interface{}{"created_at": {[]string{"2020-01-01 10:00:00"}}},
+				Gte:       map[string][]interface{}{"created_at": {[]string{"2020-01-01 12:00:00"}}},
+				Like:      map[string][]interface{}{"name": {[]string{"%%"}}},
+				HasMany:   map[string][]interface{}{"toys": {[]string{"2"}}},
+				Many2Many: map[string][]interface{}{"foods": {[]string{"1"}}},
+			}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotRet := mergeValues(tt.args.a, tt.args.b)
-			for k, v := range gotRet {
-				if vv, ok := tt.wantRet[k]; ok {
-					if !cmp.Equal(v, vv, cmpopts.SortSlices(func(i, j string) bool { return i < j })) {
-						t.Errorf("mergeValues() = %v, want %v\ndiff=%v", gotRet, tt.wantRet, cmp.Diff(gotRet, tt.wantRet))
-					}
-				} else {
-					t.Errorf("mergeValues() = %v, want %v\ndiff=%v", gotRet, tt.wantRet, cmp.Diff(gotRet, tt.wantRet))
-				}
+			gotQueryParam, err := splitParams1(tt.args.model, tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("splitParams1() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !cmp.Equal(gotQueryParam, tt.wantQueryParam) {
+				t.Errorf("splitParams1() = %v, want %v\ndiff=%v", gotQueryParam, tt.wantQueryParam, cmp.Diff(gotQueryParam, tt.wantQueryParam))
 			}
 		})
 	}

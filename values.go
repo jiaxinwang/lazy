@@ -1,16 +1,12 @@
 package lazy
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/adam-hanna/arrayOperations"
-	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm/schema"
@@ -273,70 +269,179 @@ func Tag(v interface{}, m map[string]string) map[string]interface{} {
 	return ret
 }
 
-// BeforeLazy get before-action's param
-func BeforeLazy(params map[string][]string) (eq map[string][]string, gt, lt, gte, lte map[string]string, reduced map[string][]string) {
-	var buf bytes.Buffer
-	reduced = make(map[string][]string)
-	if err := gob.NewEncoder(&buf).Encode(params); err != nil {
-		return
+// QueryParam ...
+type QueryParam struct {
+	Model     interface{}
+	Eq        map[string][]interface{}
+	Lt        map[string][]interface{}
+	Gt        map[string][]interface{}
+	Lte       map[string][]interface{}
+	Gte       map[string][]interface{}
+	Like      map[string][]interface{}
+	HasMany   map[string][]interface{}
+	Many2Many map[string][]interface{}
+	Page      int
+	Limit     int
+	Offset    int
+}
+
+func valueOfMap(params map[string][]string, key string) (value []string, ok bool) {
+	if value, ok = params[key]; !ok {
+		return []string{}, ok
 	}
-	gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(&reduced)
 
-	eq = make(map[string][]string)
-	gt = make(map[string]string)
-	lt = make(map[string]string)
-	gte = make(map[string]string)
-	lte = make(map[string]string)
+	if len(value) == 0 {
+		return []string{}, false
+	}
+	return
+}
 
-	for k, vv := range params {
-		if vv == nil || !strings.HasPrefix(k, "before_") {
-			continue
+func toGenericArray(arr ...interface{}) []interface{} {
+	return arr
+}
+
+func splitParams1(model interface{}, params map[string][]string) (queryParam QueryParam, err error) {
+	queryParam.Eq = make(map[string][]interface{})
+	queryParam.Gt = make(map[string][]interface{})
+	queryParam.Lt = make(map[string][]interface{})
+	queryParam.Gte = make(map[string][]interface{})
+	queryParam.Lte = make(map[string][]interface{})
+	queryParam.Like = make(map[string][]interface{})
+	queryParam.HasMany = make(map[string][]interface{})
+	queryParam.Many2Many = make(map[string][]interface{})
+
+	if v, ok := valueOfMap(params, "offset"); ok {
+		if offset, err := strconv.Atoi(v[0]); err == nil {
+			queryParam.Offset = offset
+		} else {
+			queryParam.Offset = 0
 		}
-		for _, v := range vv {
-			name := k
-			destM := &eq
-			destS := &gt
-			switch {
-			case strings.HasSuffix(k, `_gt`):
-				name = strings.TrimPrefix(strings.TrimSuffix(k, `_gt`), "before_")
-				destM = nil
-				destS = &gt
-			case strings.HasSuffix(k, `_lt`):
-				name = strings.TrimPrefix(strings.TrimSuffix(k, `_lt`), "before_")
-				destM = nil
-				destS = &lt
-			case strings.HasSuffix(k, `_gte`):
-				name = strings.TrimPrefix(strings.TrimSuffix(k, `_gte`), "before_")
-				destM = nil
-				destS = &gte
-			case strings.HasSuffix(k, `_lte`):
-				name = strings.TrimPrefix(strings.TrimSuffix(k, `_lte`), "before_")
-				destM = nil
-				destS = &lte
-			default:
-				name = strings.TrimPrefix(k, "before_")
-				destM = &eq
-				destS = nil
-			}
-			if destS != nil {
-				(*destS)[name] = v
-				delete(reduced, k)
-			}
-			if destM != nil {
-				if (*destM)[name] == nil {
-					(*destM)[name] = make([]string, 0)
+	}
+
+	if v, ok := valueOfMap(params, "limit"); ok {
+		if limit, err := strconv.Atoi(v[0]); err == nil {
+			queryParam.Limit = limit
+		} else {
+			queryParam.Limit = 1000
+		}
+	}
+
+	if v, ok := valueOfMap(params, "page"); ok {
+		if page, err := strconv.Atoi(v[0]); err == nil {
+			queryParam.Page = page
+		} else {
+			queryParam.Page = 0
+		}
+	}
+
+	m, err := schema.Parse(model, schemaStore, schema.NamingStrategy{})
+	if err != nil {
+		logrus.WithError(err).Error()
+		return queryParam, fmt.Errorf("can't get schema : %w", err)
+	}
+
+	for _, vField := range m.Fields {
+		jsonKey := vField.StructField.Tag.Get("json")
+		if v, ok := vField.Schema.Relationships.Relations[vField.Name]; ok {
+			logrus.Print("R: ", vField.Name)
+			switch v.Type {
+			case schema.HasMany:
+				key := fmt.Sprintf("%s", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.HasMany[jsonKey] = toGenericArray(v)
 				}
-				(*destM)[name] = append((*destM)[name], v)
-				delete(reduced, k)
+			case schema.Many2Many:
+				key := fmt.Sprintf("%s", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Many2Many[jsonKey] = toGenericArray(v)
+				}
 			}
+
+		} else {
+			switch vField.FieldType.Kind() {
+			case reflect.String:
+				key := fmt.Sprintf("%s", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Eq[jsonKey] = toGenericArray(v)
+				}
+				key = fmt.Sprintf("%s_like", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Like[jsonKey] = toGenericArray(v)
+				}
+			case reflect.Bool:
+				key := fmt.Sprintf("%s", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Eq[jsonKey] = toGenericArray(v)
+				}
+			case reflect.Struct:
+				t := time.Now()
+				switch vField.FieldType {
+				case reflect.TypeOf(t), reflect.TypeOf(&t):
+					// TODO: time format
+					key := fmt.Sprintf("%s", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Eq[jsonKey] = toGenericArray(v)
+					}
+					key = fmt.Sprintf("%s_lt", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Lt[jsonKey] = toGenericArray(v)
+					}
+					key = fmt.Sprintf("%s_gt", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Gt[jsonKey] = toGenericArray(v)
+					}
+					key = fmt.Sprintf("%s_lte", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Lte[jsonKey] = toGenericArray(v)
+					}
+					key = fmt.Sprintf("%s_gte", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Gte[jsonKey] = toGenericArray(v)
+					}
+				}
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				fallthrough
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				fallthrough
+			case reflect.Float32, reflect.Float64:
+				key := fmt.Sprintf("%s", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Eq[jsonKey] = toGenericArray(v)
+				}
+				key = fmt.Sprintf("%s_lt", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Lt[jsonKey] = toGenericArray(v)
+				}
+				key = fmt.Sprintf("%s_gt", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Gt[jsonKey] = toGenericArray(v)
+				}
+				key = fmt.Sprintf("%s_lte", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Lte[jsonKey] = toGenericArray(v)
+				}
+				key = fmt.Sprintf("%s_gte", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Gte[jsonKey] = toGenericArray(v)
+				}
+
+			}
+			logrus.WithFields(
+				logrus.Fields{
+					"DBName": vField.DBName,
+					"Name":   vField.Name,
+					"Kind":   vField.FieldType.Kind(),
+				},
+			).Info()
+
 		}
 	}
 
 	return
 }
 
-// Lazy ...
-func Lazy(params map[string][]string) (eq map[string][]string, gt, lt, gte, lte map[string]string) {
+// splitParams ...
+func splitParams(params map[string][]string) (eq map[string][]string, gt, lt, gte, lte map[string]string) {
 	eq = make(map[string][]string)
 	gt = make(map[string]string)
 	lt = make(map[string]string)
@@ -352,7 +457,7 @@ func Lazy(params map[string][]string) (eq map[string][]string, gt, lt, gte, lte 
 			destM := &eq
 			destS := &gt
 			switch {
-			case strings.EqualFold(k, "size"):
+			case strings.EqualFold(k, "limit"):
 				fallthrough
 			case strings.EqualFold(k, "offset"):
 				fallthrough
@@ -395,69 +500,11 @@ func Lazy(params map[string][]string) (eq map[string][]string, gt, lt, gte, lte 
 
 // URLValues ...
 func URLValues(s interface{}, q map[string][]string) (eqm map[string][]interface{}, gtm, ltm, gtem, ltem map[string]interface{}) {
-	eq, gt, lt, gte, lte := Lazy(q)
+	eq, gt, lt, gte, lte := splitParams(q)
 	eqm = TagSlice(s, eq)
 	gtm = Tag(s, gt)
 	ltm = Tag(s, lt)
 	gtem = Tag(s, gte)
 	ltem = Tag(s, lte)
-	return
-}
-
-func makeResultReceiver(length int) []interface{} {
-	result := make([]interface{}, 0, length)
-	for i := 0; i < length; i++ {
-		var current interface{}
-		current = struct{}{}
-		result = append(result, &current)
-	}
-	return result
-}
-
-func ignoreValues(c *gin.Context) (ret map[string][]string) {
-	if v, ok := c.Get(`_ignore_values`); ok {
-		ret = v.(map[string][]string)
-	} else {
-		ret = make(map[string][]string, 0)
-	}
-	params := map[string][]string(c.Request.URL.Query())
-	ret = mergeValues(params, ret)
-	if len(ret) > 0 {
-		c.Set("_ignore_values", ret)
-	}
-	return
-}
-
-func additionValues(c *gin.Context, add map[string][]string) (ret map[string][]string) {
-	if v, ok := c.Get(`_additional_values`); ok {
-		ret = v.(map[string][]string)
-	} else {
-		ret = make(map[string][]string, 0)
-	}
-	ret = mergeValues(ret, add)
-	if len(ret) > 0 {
-		c.Set("_additional_values", ret)
-	}
-	return
-}
-
-func mergeValues(a, b map[string][]string) (ret map[string][]string) {
-	ret = make(map[string][]string, len(a))
-	for k, v := range a {
-		tmp := make([]string, len(v))
-		copy(tmp, v)
-		ret[k] = tmp
-	}
-	for k, v := range b {
-		if inRetV, ok := ret[k]; ok {
-			z, ok := arrayOperations.Union(inRetV, v)
-			if !ok {
-				fmt.Println("Cannot find difference")
-			}
-			ret[k] = z.Interface().([]string)
-		} else {
-			ret[k] = v
-		}
-	}
 	return
 }
