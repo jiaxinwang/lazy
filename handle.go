@@ -64,11 +64,8 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		return nil, ErrParamMissing
 	}
 	params := paramsItr.(map[string][]string)
-	filterParams, page, limit, offset := separatePage(params)
+	filterParams, _, _, _ := separatePage(params)
 	c.Set(KeyParams, filterParams)
-	if limit == 0 {
-		limit = 10000
-	}
 
 	var mapResults []map[string]interface{}
 
@@ -81,26 +78,30 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		return nil, err
 	}
 
-	eq, gt, lt, gte, lte := URLValues(config.Model, params)
 	tx := config.DB.Model(config.Model)
 
-	for k, v := range eq {
+	qParams, err := splitQueryParams(config.Model, params)
+	if err != nil {
+		logrus.WithError(err).Error()
+	}
+
+	for k, v := range qParams.Eq {
 		tx = tx.Where(fmt.Sprintf("%s IN ?", k), v)
 	}
-	for k, v := range gt {
+	for k, v := range qParams.Gt {
 		tx = tx.Where(fmt.Sprintf("%s > ?", k), v)
 	}
-	for k, v := range lt {
+	for k, v := range qParams.Lt {
 		tx = tx.Where(fmt.Sprintf("%s < ?", k), v)
 	}
-	for k, v := range gte {
+	for k, v := range qParams.Gte {
 		tx = tx.Where(fmt.Sprintf("%s >= ?", k), v)
 	}
-	for k, v := range lte {
+	for k, v := range qParams.Lte {
 		tx = tx.Where(fmt.Sprintf("%s <= ?", k), v)
 	}
 
-	tx.Limit(int(limit)).Offset(int(limit*page + offset)).Find(&mapResults)
+	tx.Limit(int(qParams.Limit)).Offset(int(qParams.Limit*qParams.Page + qParams.Offset)).Find(&mapResults)
 
 	count := int64(len(mapResults))
 	if config.NeedCount {
