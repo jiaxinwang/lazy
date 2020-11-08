@@ -101,11 +101,38 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		tx = tx.Where(fmt.Sprintf("%s <= ?", k), v)
 	}
 
+	needGroup := false
+	dotName := ""
+	name := ""
+	ptable := ""
+
+	for k, v := range qParams.HasMany {
+		logrus.WithField("kk", k).WithField("v", v).Info("has many")
+		tx = tx.Joins(v.Table).Where(fmt.Sprintf("%s IN ?", v.Name), v.Values)
+		dotName = v.DotName
+		name = v.Name
+		ptable = v.PTable
+		needGroup = true
+	}
+
+	for k, v := range qParams.Many2Many {
+		logrus.WithField("kk", k).WithField("v", v).Info()
+	}
+
 	tx.Limit(int(qParams.Limit)).Offset(int(qParams.Limit*qParams.Page + qParams.Offset)).Find(&mapResults)
 
 	count := int64(len(mapResults))
 	if config.NeedCount {
-		tx.Count(&count)
+		if needGroup {
+			tx = tx.Group(ptable)
+			type Count struct {
+				cnt int64
+			}
+			var c Count
+			tx.Select(fmt.Sprintf("%s as %s,count(%s) as cnt", dotName, name, ptable)).Scan(&c)
+		} else {
+			tx.Count(&count)
+		}
 	}
 
 	modelResults := make([]interface{}, len(mapResults))
@@ -117,7 +144,6 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		modelResults[k] = tmp
 	}
 	for _, vBelongToRelation := range relations.BelongsTo {
-
 		ref := vBelongToRelation.References[0]
 		foreignKeyName := ref.ForeignKey.Name
 		primaryFieldValues := make([]interface{}, len(modelResults))

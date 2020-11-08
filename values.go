@@ -191,16 +191,26 @@ func dbNameWithFieldName(v interface{}, fieldName string) (string, error) {
 
 }
 
+// RelationQueryParam ...
+type RelationQueryParam struct {
+	Name    string
+	DotName string
+	PTable  string
+	Table   string
+	Values  []interface{}
+}
+
 // QueryParam ...
 type QueryParam struct {
-	Model     interface{}
-	Eq        map[string][]interface{}
-	Lt        map[string][]interface{}
-	Gt        map[string][]interface{}
-	Lte       map[string][]interface{}
-	Gte       map[string][]interface{}
-	Like      map[string][]interface{}
-	HasMany   map[string][]interface{}
+	Model interface{}
+	Eq    map[string][]interface{}
+	Lt    map[string][]interface{}
+	Gt    map[string][]interface{}
+	Lte   map[string][]interface{}
+	Gte   map[string][]interface{}
+	Like  map[string][]interface{}
+	// HasMany   map[string][]interface{}
+	HasMany   map[string]RelationQueryParam
 	Many2Many map[string][]interface{}
 	Page      int
 	Limit     int
@@ -229,7 +239,7 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 	queryParam.Gte = make(map[string][]interface{})
 	queryParam.Lte = make(map[string][]interface{})
 	queryParam.Like = make(map[string][]interface{})
-	queryParam.HasMany = make(map[string][]interface{})
+	queryParam.HasMany = make(map[string]RelationQueryParam)
 	queryParam.Many2Many = make(map[string][]interface{})
 
 	if v, ok := valueOfMap(params, "offset"); ok {
@@ -269,8 +279,15 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 			switch v.Type {
 			case schema.HasMany:
 				key := fmt.Sprintf("%s", jsonKey)
-				if v, ok := valueOfMap(params, key); ok {
-					queryParam.HasMany[jsonKey] = toGenericArray(v)
+				if vOfMap, ok := valueOfMap(params, key); ok {
+
+					queryParam.HasMany[jsonKey] = RelationQueryParam{
+						Name:    fmt.Sprintf("%s__%s", vField.StructField.Name, "id"),
+						DotName: fmt.Sprintf("%s.%s", vField.Name, "id"),
+						Table:   vField.StructField.Name,
+						PTable:  fmt.Sprintf("%s.%s", v.Schema.Table, "id"),
+						Values:  toGenericArray(vOfMap),
+					}
 				}
 			case schema.Many2Many:
 				key := fmt.Sprintf("%s", jsonKey)
