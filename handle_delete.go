@@ -24,6 +24,19 @@ func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface
 
 	m, err := schema.Parse(config.Model, schemaStore, schema.NamingStrategy{})
 
+	for k, v := range registry {
+		if v != m.ModelType {
+			newStruct, _ := NewStruct(k)
+			if m2, err := schema.Parse(newStruct, schemaStore, schema.NamingStrategy{}); err == nil {
+				for _, vM2M := range m2.Relationships.Many2Many {
+					config.DB.Table(vM2M.JoinTable.Table).Where(fmt.Sprintf("%s in ?", vM2M.JoinTable.Fields[1].DBName), ids).Delete(nil)
+				}
+				// for _, vMany := range m2.Relationships.HasMany {
+				// }
+			}
+		}
+	}
+
 	for _, vID := range ids {
 		priDBName := m.PrimaryFieldDBNames[0]
 		mapResult := map[string]interface{}{}

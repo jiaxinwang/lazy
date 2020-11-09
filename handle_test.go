@@ -90,6 +90,27 @@ func defaultDogRouter(r *gin.Engine) *gin.Engine {
 		return
 	})
 
+	// ---------
+	r.DELETE("/foods/:id", func(c *gin.Context) {
+		config := Configuration{
+			DB:     gormDB,
+			Model:  &Food{},
+			Action: []Action{{DB: gormDB, Model: &Food{}, Action: DefaultDeleteAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
+
+	// ---------
+	r.DELETE("/toys/:id", func(c *gin.Context) {
+		config := Configuration{
+			DB:     gormDB,
+			Model:  &Toy{},
+			Action: []Action{{DB: gormDB, Model: &Toy{}, Action: DefaultDeleteAction}},
+		}
+		c.Set(KeyConfig, &config)
+		return
+	})
 	return r
 }
 
