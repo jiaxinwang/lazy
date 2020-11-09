@@ -38,7 +38,7 @@ func TestDefaultDeleteActionMany2Many(t *testing.T) {
 	r := defaultDogRouter(router())
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("DELETE", "/foods/1", nil)
+	req, _ := http.NewRequest("DELETE", "/foods/3", nil)
 
 	q := req.URL.Query()
 	req.URL.RawQuery = q.Encode()
@@ -51,7 +51,7 @@ func TestDefaultDeleteActionMany2Many(t *testing.T) {
 	assert.NoError(t, err)
 
 	var food Food
-	err = gormDB.Where("id = 1").Take(&food).Error
+	err = gormDB.Where("id = 3").Take(&food).Error
 	assert.Equal(t, gorm.ErrRecordNotFound, err)
 
 }
