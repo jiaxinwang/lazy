@@ -283,7 +283,6 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 	for _, vField := range m.Fields {
 		jsonKey := vField.StructField.Tag.Get("json")
 		if v, ok := vField.Schema.Relationships.Relations[vField.Name]; ok {
-			logrus.Print("R: ", vField.Name)
 			switch v.Type {
 			case schema.HasMany:
 				key := fmt.Sprintf("%s", jsonKey)
@@ -305,8 +304,6 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 						JoinTableForeignFieldName: v.JoinTable.Fields[1].DBName,
 						Values:                    toGenericArray(vOfMap),
 					}
-
-					// queryParam.Many2Many[jsonKey] = toGenericArray(v)
 				}
 			}
 
