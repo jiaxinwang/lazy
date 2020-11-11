@@ -14,8 +14,10 @@ func TestDefaultPatchAction(t *testing.T) {
 	r := defaultDogRouter(router())
 
 	jsonParams := []string{
-		`{"name":"patch-dog-name-1"}`,
-		`{"name":"test-put-dog-2","foods":[{"id":1},{"id":2}]}`,
+		// `{"name":"test-patch-dog-1"}`,
+		// `{"name":"test-patch-dog-2","foods":[{"id":1},{"id":2}]}`,
+		// `{"name":"test-patch-dog-3","toys":[{"name":"new-toy-1"},{"name":"new-toy-1"}]}`,
+		`{"name":"test-patch-dog-3","owner":[{"id":"1"}}`,
 	}
 
 	for _, jsonParam := range jsonParams {
@@ -29,5 +31,4 @@ func TestDefaultPatchAction(t *testing.T) {
 		assert.Equal(t, 200, w.Code)
 		assert.NoError(t, err)
 	}
-
 }

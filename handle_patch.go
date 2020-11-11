@@ -29,55 +29,74 @@ func DefaultPatchAction(c *gin.Context, actionConfig *Action, payload interface{
 		return nil, err
 	}
 
-	s, err := json.MarshalToString(bodyParams)
+	bodyParamsJSONStr, err := json.MarshalToString(bodyParams)
 	if err != nil {
 		logrus.WithError(err).Error()
-		// TODO: error
 		return nil, err
 	}
 
 	rels, err := relationships(config.DB, config.Model)
-	if err == nil {
-		for _, v := range rels.Relations {
-			switch v.Type {
-			case schema.HasMany, schema.HasOne, schema.Many2Many:
-				logrus.Print(v.Field.StructField.Tag.Get("json"))
-				logrus.Print(s)
-				if s, err = sjson.Delete(s, v.Field.StructField.Tag.Get("json")); err != nil {
-					logrus.WithError(err).Error()
-					// TODO: error
-					return nil, err
-				}
-				logrus.Print(s)
-			}
-		}
-	} else {
-		logrus.WithError(err).Error()
-		// TODO: error
-		return nil, err
+	for _, v := range rels.Relations {
+		jsonTag := v.Field.StructField.Tag.Get("json")
+		bodyParamsJSONStr, _ = sjson.Delete(bodyParamsJSONStr, jsonTag)
+
 	}
 
-	err = json.UnmarshalFromString(s, &config.Model)
+	err = json.UnmarshalFromString(bodyParamsJSONStr, &config.Model)
 	if err != nil {
 		logrus.WithError(err).Error()
-		// TODO: error
 		return nil, err
 	}
 
 	newValue := map[string]interface{}{}
-	if err := json.UnmarshalFromString(s, &newValue); err != nil {
+	if err := json.UnmarshalFromString(bodyParamsJSONStr, &newValue); err != nil {
 		logrus.WithError(err).Error()
-		// TODO: error
 		return nil, err
 	}
 
 	err = config.DB.Model(config.Model).Updates(newValue).Error
 	if err != nil {
 		logrus.WithError(err).Error()
-		// TODO: error
 		return nil, err
 	}
 
-	// TODO: return
+	bodyParamsJSONStr, _ = json.MarshalToString(bodyParams)
+
+	if err == nil {
+		for _, v := range rels.Relations {
+			jsonTag := v.Field.StructField.Tag.Get("json")
+			if _, ok := bodyParams[jsonTag]; ok {
+				switch v.Type {
+				case schema.Many2Many, schema.HasMany:
+					json.UnmarshalFromString(bodyParamsJSONStr, config.Model)
+					if fieldValue, err := valueOfField(config.Model, v.Name); err == nil {
+						if fieldValue != nil {
+							config.DB.Model(config.Model).Association(v.Name).Replace(fieldValue)
+						}
+					} else {
+						logrus.WithError(err).Error()
+						return nil, err
+					}
+
+					if bodyParamsJSONStr, err = sjson.Delete(bodyParamsJSONStr, v.Field.StructField.Tag.Get("json")); err != nil {
+						logrus.WithError(err).Error()
+						return nil, err
+					}
+				case schema.HasOne:
+					// do nothing
+					if bodyParamsJSONStr, err = sjson.Delete(bodyParamsJSONStr, v.Field.StructField.Tag.Get("json")); err != nil {
+						logrus.WithError(err).Error()
+						// TODO: error
+						return nil, err
+					}
+				}
+			}
+
+		}
+	} else {
+		logrus.WithError(err).Error()
+		return nil, err
+	}
+
 	return data, nil
 }
