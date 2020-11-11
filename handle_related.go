@@ -14,7 +14,6 @@ import (
 func DefaultRelatedPostAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	urlPaths := strings.Split(c.Request.URL.Path, `/`)
 	fieldJSONName := urlPaths[len(urlPaths)-1]
-	logrus.Printf(fieldJSONName)
 
 	_, queryParams, bodyParams := ContentParams(c)
 	ids, ok := queryParams[`id`]
@@ -41,15 +40,12 @@ func DefaultRelatedPostAction(c *gin.Context, actionConfig *Action, payload inte
 		return nil, err
 	}
 
-	logrus.Print(s)
 	err = json.UnmarshalFromString(s, &config.Model)
 	if err != nil {
 		logrus.WithError(err).Error()
 		// TODO: error
 		return nil, err
 	}
-
-	logrus.Printf("%+v", config.Model)
 
 	m, err := schema.Parse(config.Model, schemaStore, schema.NamingStrategy{})
 
