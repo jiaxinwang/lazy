@@ -1,261 +1,249 @@
 package lazy
 
 import (
-	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/antchfx/jsonquery"
 	"github.com/levigross/grequests"
-
 	"gorm.io/gorm/schema"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
-
-	"github.com/tidwall/sjson"
 )
 
-// DeleteHandle executes delete.
-func DeleteHandle(c *gin.Context) (data []map[string]interface{}, err error) {
-	id := c.Param("id")
-	if err = validator.New().Var(id, "required,number"); err != nil {
-		return nil, err
-	}
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrNoConfiguration
-	}
-
-	if !config.IgnoreAssociations {
-		sfs := config.DB.NewScope(config.Model).GetStructFields()
-		for _, v := range sfs {
-			if v.Relationship != nil {
-				r := v.Relationship
-				switch r.Kind {
-				case string(schema.HasOne), string(schema.Many2Many):
-					return nil, ErrUnknown
-				case string(schema.HasMany):
-					count := 0
-					config.DB.Table(v.DBName).Where(fmt.Sprintf("%s = ?", r.ForeignDBNames[0]), id).Count(&count)
-					if count > 0 {
-						return nil, ErrHasAssociations
-					}
-				}
-			}
-		}
-	}
-
-	return nil, config.DB.Where(`id = ?`, id).Delete(config.Model).Error
-}
-
 // DefaultPostAction execute default post.
-func DefaultPostAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrNoConfiguration
-	}
-
-	if err = c.ShouldBindJSON(config.Model); err != nil {
+func DefaultPostAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
+	_, _, bodyParams := ContentParams(c)
+	config, err := ConfigurationWithContext(c)
+	if err != nil {
 		return nil, err
 	}
+	s, err := json.MarshalToString(bodyParams)
+	if err != nil {
+		logrus.WithError(err).Error()
+		// TODO: error
+		return nil, err
+	}
+	err = json.UnmarshalFromString(s, &config.Model)
+	if err != nil {
+		logrus.WithError(err).Error()
+		// TODO: error
+		return nil, err
+	}
+
 	err = createModel(config.DB, config.Model)
-	data = make([]map[string]interface{}, 1)
-	data[0] = make(map[string]interface{})
-	data[0][keyData] = clone(config.Model)
-	c.Set(keyResults, data)
+	// data = make([]map[string]interface{}, 1)
+	// data[0] = make(map[string]interface{})
+	// data[0][keyData] = clone(config.Model)
+	// c.Set(keyResults, data)
 	return data, err
 }
 
-// PostHandle executes post.
-func PostHandle(c *gin.Context) (data []map[string]interface{}, err error) {
+// ConfigurationWithContext ...
+func ConfigurationWithContext(c *gin.Context) (*Configuration, error) {
 	var config *Configuration
 	if v, ok := c.Get(KeyConfig); ok {
 		config = v.(*Configuration)
 	} else {
-		return nil, ErrNoConfiguration
+		return nil, ErrConfigurationMissing
 	}
-
-	if err = c.ShouldBindJSON(config.Model); err != nil {
-		return nil, err
-	}
-
-	return nil, createModel(config.DB, config.Model)
-}
-
-// PutHandle executes put.
-func PutHandle(c *gin.Context) (data []map[string]interface{}, err error) {
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrNoConfiguration
-	}
-	if err = c.ShouldBindJSON(config.Model); err != nil {
-		return nil, err
-	}
-	return
-}
-
-// GetHandle executes actions and returns response
-func GetHandle(c *gin.Context) (data []map[string]interface{}, err error) {
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrNoConfiguration
-	}
-
-	set := foreignOfModel((*config).Model)
-
-	paramsItr, ok := c.Get(KeyParams)
-	if !ok {
-		return nil, errors.New("can't find lazy params")
-	}
-	params := paramsItr.(Params)
-	remain, page, limit, offset := separatePage(params)
-	c.Set(KeyParams, remain)
-	if limit == 0 {
-		limit = 10000
-	}
-
-	var merged map[string][]string
-	additional, ok := c.Get("_additional_values")
-	if ok {
-		merged = mergeValues(c.Request.URL.Query(), additional.(map[string][]string))
-	}
-
-	eq, gt, lt, gte, lte := URLValues(config.Model, merged)
-
-	sel := sq.Select(config.Columms).From(config.Table).Limit(limit).Offset(limit*page + offset)
-	sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
-	data, err = ExecSelect(config.DB, sel)
-	if err != nil {
-		return
-	}
-
-	for _, v := range data {
-		if err := MapStruct(v, config.Model); err != nil {
-			return nil, err
-		}
-		tmp := clone(config.Model)
-
-		for _, v := range set {
-			value := valueOfTag(tmp, v[ForeignOfModelID])
-			eq := map[string][]interface{}{v[ForeignOfModelForeignID]: []interface{}{value}}
-			data, err := SelectEq(config.DB, v[ForeignOfModelForeignTable], "*", eq)
-			if err != nil {
-				return nil, err
-			}
-			if len(data) == 1 {
-				jbyte, _ := json.Marshal(tmp)
-				assemble, _ := sjson.Set(string(jbyte), v[ForeignOfModelName], data[0])
-				json.Unmarshal([]byte(assemble), tmp)
-			}
-		}
-
-		// TODO: batch
-
-		config.Results = append(config.Results, tmp)
-	}
-
-	count := int64(len(data))
-
-	if config.NeedCount {
-		sel := sq.Select(`count(1) as c`).From(config.Table)
-		sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
-		data, err = ExecSelect(config.DB, sel)
-		if err != nil {
-			return
-		}
-		if len(data) == 1 {
-			iter, _ := data[0][`c`]
-			count, err = strconv.ParseInt(fmt.Sprintf("%v", iter), 10, 64)
-			if err != nil {
-				return
-			}
-		}
-	}
-	logrus.WithField("count", count).Info()
-	c.Set(keyCount, count)
-	c.Set(keyData, config.Results)
-	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
-	return
+	return config, nil
 }
 
 // DefaultGetAction execute actions and returns response
-func DefaultGetAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
-	var config *Configuration
-	if v, ok := c.Get(KeyConfig); ok {
-		config = v.(*Configuration)
-	} else {
-		return nil, ErrNoConfiguration
+func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
+	config, err := ConfigurationWithContext(c)
+	if err != nil {
+		return nil, err
 	}
 
 	paramsItr, ok := c.Get(KeyParams)
 	if !ok {
+		logrus.WithError(ErrParamMissing).Error()
 		return nil, ErrParamMissing
 	}
-	params := paramsItr.(Params)
-	filterParams, page, limit, offset := separatePage(params)
+	params := paramsItr.(map[string][]string)
+	filterParams, _, _, _ := separatePage(params)
 	c.Set(KeyParams, filterParams)
-	if limit == 0 {
-		limit = 10000
-	}
 
-	eq, gt, lt, gte, lte := URLValues(config.Model, params)
+	var mapResults []map[string]interface{}
 
-	sel := sq.Select(config.Columms).From(config.Table).Limit(limit).Offset(limit*page + offset)
-	sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
-	data, err = ExecSelect(config.DB, sel)
+	relations, err := relationships(config.DB, config.Model)
 	if err != nil {
-		return
+		return nil, err
+	}
+	modelSchema, err := schema.Parse(config.Model, schemaStore, schema.NamingStrategy{})
+	if err != nil {
+		return nil, err
 	}
 
-	for _, v := range data {
+	tx := config.DB.Model(config.Model)
+
+	qParams, err := splitQueryParams(config.Model, params)
+	if err != nil {
+		logrus.WithError(err).Error()
+	}
+
+	for _, v := range qParams.Many2Many {
+		var ids []int64
+		config.DB.Table(v.JoinTable).Where(fmt.Sprintf("%s in ?", v.JoinTableForeignFieldName), v.Values).Pluck(v.JoinTableFieldName, &ids)
+		if len(ids) > 0 {
+			qParams.Eq["id"] = make([]interface{}, 0)
+			for _, vIds := range ids {
+				qParams.Eq["id"] = append(qParams.Eq["id"], vIds)
+			}
+		}
+	}
+
+	for k, v := range qParams.Eq {
+		tx = tx.Where(fmt.Sprintf("%s IN ?", k), v)
+	}
+	for k, v := range qParams.Gt {
+		tx = tx.Where(fmt.Sprintf("%s > ?", k), v)
+	}
+	for k, v := range qParams.Lt {
+		tx = tx.Where(fmt.Sprintf("%s < ?", k), v)
+	}
+	for k, v := range qParams.Gte {
+		tx = tx.Where(fmt.Sprintf("%s >= ?", k), v)
+	}
+	for k, v := range qParams.Lte {
+		tx = tx.Where(fmt.Sprintf("%s <= ?", k), v)
+	}
+
+	needGroup := false
+	dotName := ""
+	name := ""
+	ptable := ""
+
+	for _, v := range qParams.HasMany {
+		tx = tx.Joins(v.Table).Where(fmt.Sprintf("%s IN ?", v.Name), v.Values)
+		dotName = v.DotName
+		name = v.Name
+		ptable = v.PTable
+		needGroup = true
+	}
+
+	tx.Limit(int(qParams.Limit)).Offset(int(qParams.Limit*qParams.Page + qParams.Offset)).Find(&mapResults)
+
+	count := int64(len(mapResults))
+	if config.NeedCount {
+		if needGroup {
+			tx = tx.Group(ptable)
+			type Count struct {
+				cnt int64
+			}
+			var c Count
+			tx.Select(fmt.Sprintf("%s as %s,count(%s) as cnt", dotName, name, ptable)).Scan(&c)
+		} else {
+			tx.Count(&count)
+		}
+	}
+
+	modelResults := make([]interface{}, len(mapResults))
+	for k, v := range mapResults {
 		if err := MapStruct(v, config.Model); err != nil {
 			return nil, err
 		}
 		tmp := clone(config.Model)
-		associateModel(config.DB, tmp)
-		// TODO: batch
+		modelResults[k] = tmp
+	}
+	for _, vBelongToRelation := range relations.BelongsTo {
+		ref := vBelongToRelation.References[0]
+		foreignKeyName := ref.ForeignKey.Name
+		primaryFieldValues := make([]interface{}, len(modelResults))
+		if len(ref.PrimaryKey.Schema.PrimaryFieldDBNames) <= 0 {
+			return nil, fmt.Errorf("primary fields not found")
+		}
 
-		config.Results = append(config.Results, tmp)
+		for kModelResults, vModelResults := range modelResults {
+			primaryFieldValue, err := valueOfField(vModelResults, foreignKeyName)
+			if err != nil {
+				return nil, err
+			}
+			primaryFieldValues[kModelResults] = primaryFieldValue
+		}
+
+		var belongToResults []map[string]interface{}
+		config.DB.Table(ref.PrimaryKey.Schema.Table).Where(fmt.Sprintf("%s IN ?", ref.PrimaryKey.Schema.PrimaryFieldDBNames[0]), primaryFieldValues).Find(&belongToResults)
+
+		assembleBelongTo(modelResults, belongToResults,
+			ref.ForeignKey.Name, ref.PrimaryKey.Schema.PrimaryFieldDBNames[0],
+			vBelongToRelation.Field.StructField.Tag.Get("json"))
+
 	}
 
-	count := int64(len(data))
-
-	if config.NeedCount {
-		sel := sq.Select(`count(1) as c`).From(config.Table)
-		sel = SelectBuilder(sel, eq, gt, lt, gte, lte)
-		data, err = ExecSelect(config.DB, sel)
-		if err != nil {
-			return
+	for _, vM2MRelation := range relations.Many2Many {
+		primaryFieldValues := make([]interface{}, len(modelResults))
+		if len(modelSchema.PrimaryFields) <= 0 {
+			return nil, fmt.Errorf("primary fields not found")
 		}
-		if len(data) == 1 {
-			iter, _ := data[0][`c`]
-			count, err = strconv.ParseInt(fmt.Sprintf("%v", iter), 10, 64)
+		primaryFieldName := modelSchema.PrimaryFields[0].Name
+		for kModelResults, vModelResults := range modelResults {
+			primaryFieldValue, err := valueOfField(vModelResults, primaryFieldName)
 			if err != nil {
-				return
+				return nil, err
+			}
+			primaryFieldValues[kModelResults] = primaryFieldValue
+		}
+
+		var joinTableResults []map[string]interface{}
+		config.DB.Table(vM2MRelation.JoinTable.Table).Where(fmt.Sprintf("%s IN ?", vM2MRelation.JoinTable.DBNames[0]), primaryFieldValues).Find(&joinTableResults)
+
+		mapForeignFieldValues := make(map[interface{}]bool)
+		for _, vv := range joinTableResults {
+			if value, ok := vv[vM2MRelation.JoinTable.DBNames[1]]; ok {
+				mapForeignFieldValues[value] = true
 			}
 		}
+		foreignFieldValues := make([]interface{}, 0)
+		for k := range mapForeignFieldValues {
+			foreignFieldValues = append(foreignFieldValues, k)
+		}
+
+		var foreignTableResults []map[string]interface{}
+		config.DB.Table(vM2MRelation.FieldSchema.Table).Where(fmt.Sprintf("%s IN ?", vM2MRelation.FieldSchema.PrimaryFields[0].DBName), foreignFieldValues).Find(&foreignTableResults)
+
+		assembleMany2Many(modelResults, joinTableResults, foreignTableResults,
+			vM2MRelation.Schema.PrimaryFields[0].Name, vM2MRelation.FieldSchema.PrimaryFields[0].DBName,
+			vM2MRelation.JoinTable.DBNames[0], vM2MRelation.JoinTable.DBNames[1],
+			vM2MRelation.Field.StructField.Tag.Get("json"))
+
 	}
-	logrus.WithField("count", count).Info()
+
+	for _, vHasManyRelation := range relations.HasMany {
+		primaryFieldValues := make([]interface{}, len(modelResults))
+
+		if len(modelSchema.PrimaryFields) <= 0 {
+			return nil, fmt.Errorf("primary fields not found")
+		}
+		primaryFieldName := modelSchema.PrimaryFields[0].Name
+
+		for k, v := range modelResults {
+			primaryFieldValue, err := valueOfField(v, primaryFieldName)
+			if err != nil {
+				return nil, err
+			}
+			primaryFieldValues[k] = primaryFieldValue
+		}
+		var hasManyResults []map[string]interface{}
+		config.DB.Table(vHasManyRelation.References[0].ForeignKey.Schema.Table).Where(fmt.Sprintf("%s IN ?", vHasManyRelation.References[0].ForeignKey.DBName), primaryFieldValues).Find(&hasManyResults)
+
+		assembleHasMany(modelResults, hasManyResults,
+			vHasManyRelation.FieldSchema.PrimaryFields[0].Name, vHasManyRelation.References[0].ForeignKey.DBName,
+			vHasManyRelation.Field.StructField.Tag.Get("json"))
+	}
+
+	logrus.WithField("count", count).Trace()
 	c.Set(keyCount, count)
-	c.Set(keyData, config.Results)
-	c.Set(keyResults, map[string]interface{}{"count": count, "items": config.Results})
+	c.Set(keyData, modelResults)
+	c.Set(keyResults, map[string]interface{}{"count": count, "items": modelResults})
 	return
 }
 
 // DefaultHTTPRequestAction ...
-func DefaultHTTPRequestAction(c *gin.Context, actionConfig *ActionConfiguration, payload interface{}) (data []map[string]interface{}, err error) {
+func DefaultHTTPRequestAction(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error) {
 	requestConfig := actionConfig.Payload.(*HTTPRequest)
 	logrus.Printf("%+v", requestConfig)
 	var resp *grequests.Response

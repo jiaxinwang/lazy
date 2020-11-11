@@ -11,6 +11,8 @@ import (
 var (
 	// KeyParams ...
 	KeyParams = `_lazy_params`
+	// KeyParamsUnion ...
+	KeyParamsUnion = `_lazy_params_union`
 	// KeyBody ...
 	KeyBody = `_lazy_body`
 	// KeyConfig ...
@@ -24,20 +26,38 @@ var (
 
 // MiddlewareParams ...
 func MiddlewareParams(c *gin.Context) {
-	params := Params(c.Request.URL.Query())
+	params := map[string][]string(c.Request.URL.Query())
+
+	// TODO:
+	for _, v := range c.Params {
+		params[v.Key] = []string{v.Value}
+	}
+
 	c.Set(KeyParams, params)
 
 	body := make(map[string]interface{})
-
-	if b, err := ioutil.ReadAll(c.Request.Body); err != nil {
-		logrus.WithError(err).Trace()
-	} else {
-		if json.Unmarshal(b, &body) != nil {
+	if c.Request.Body != nil {
+		if b, err := ioutil.ReadAll(c.Request.Body); err != nil {
 			logrus.WithError(err).Trace()
 		} else {
-			c.Set(KeyBody, body)
+			if json.Unmarshal(b, &body) != nil {
+				logrus.WithError(err).Trace()
+			}
 		}
 	}
+
+	c.Set(KeyBody, body)
+
+	union := make(map[string]interface{})
+	for k, v := range params {
+		union[k] = v
+	}
+	for k, v := range body {
+		union[k] = v
+	}
+
+	c.Set(KeyParamsUnion, union)
+
 	c.Next()
 }
 
@@ -58,37 +78,15 @@ func MiddlewareExec(c *gin.Context) {
 		if v, ok := c.Get(KeyConfig); ok {
 			config = v.(*Configuration)
 		} else {
-			c.Set(KeyErrorMessage, ErrNoConfiguration)
+			c.Set(KeyErrorMessage, ErrConfigurationMissing)
 			return
 		}
 		switch c.Request.Method {
-		case http.MethodGet:
+		case http.MethodGet, http.MethodDelete, http.MethodPost, http.MethodPatch, http.MethodPut:
 			for _, v := range config.Action {
 				if _, err := v.Action(c, &v, v.Payload); err != nil {
 					c.Set(KeyErrorMessage, err.Error())
 				}
-			}
-			if data, exist := c.Get(keyResults); exist {
-				c.Set(keyData, map[string]interface{}{"data": data})
-			}
-		case http.MethodDelete:
-			if _, err := DeleteHandle(c); err != nil {
-				c.Set(KeyErrorMessage, err.Error())
-				return
-			}
-			if data, exist := c.Get(keyResults); exist {
-				c.Set(keyData, map[string]interface{}{"data": data})
-			}
-		case http.MethodPost:
-			for _, v := range config.Action {
-				if _, err := v.Action(c, &v, v.Payload); err != nil {
-					c.Set(KeyErrorMessage, err.Error())
-				}
-			}
-
-			if data, exist := c.Get(keyResults); exist {
-				c.Set(keyData, map[string]interface{}{"data": data})
-				return
 			}
 		}
 		return

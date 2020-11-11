@@ -1,11 +1,12 @@
 package lazy
 
 import (
-	"errors"
+	"fmt"
 	"reflect"
-	"strings"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/sirupsen/logrus"
 )
 
 func clone(inter interface{}) interface{} {
@@ -20,14 +21,6 @@ func clone(inter interface{}) interface{} {
 	return newInter.Interface()
 }
 
-func deepCopy(src, dst interface{}) error {
-	byt, err := json.Marshal(src)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(byt, dst)
-}
-
 func isNil(i interface{}) bool {
 	if i == nil {
 		return true
@@ -39,7 +32,7 @@ func isNil(i interface{}) bool {
 	return false
 }
 
-func setJSONField(src interface{}, name string, v interface{}) error {
+func setFieldWithJSONString(src interface{}, name string, v interface{}) error {
 	byte1, err := json.Marshal(src)
 	if err != nil {
 		return err
@@ -62,33 +55,6 @@ func setJSONField(src interface{}, name string, v interface{}) error {
 	return nil
 }
 
-func setField(src interface{}, name string, v interface{}) (err error) {
-	ps := reflect.ValueOf(src)
-	s := ps.Elem()
-	if s.Kind() == reflect.Struct {
-		f := s.FieldByName(name)
-		if f.IsValid() {
-			if f.CanSet() {
-				if isNil(v) {
-					f.Set(reflect.Zero(f.Type()))
-				} else {
-					f.Set(reflect.ValueOf(v))
-				}
-			} else {
-				err = errors.New("can't set")
-				return
-			}
-		} else {
-			err = errors.New("not valid")
-			return
-		}
-	} else {
-		err = errors.New("wrong kind")
-		return
-	}
-	return
-}
-
 func valueOfField(src interface{}, name string) (v interface{}, err error) {
 	val := reflect.ValueOf(src).Elem()
 	return val.FieldByName(name).Interface(), nil
@@ -102,20 +68,33 @@ func valueOfJSONKey(inter interface{}, key string) jsoniter.Any {
 	return nil
 }
 
-func valueOfTag(inter interface{}, tagName string) interface{} {
-	model := reflect.ValueOf(inter)
-	if model.Kind() == reflect.Ptr {
-		model = model.Elem()
-	}
-
-	for i := 0; i < model.NumField(); i++ {
-		fieldType := model.Type().Field(i)
-		if name, _, _, _, err := disassembleTag(fieldType.Tag.Get("lazy")); err == nil && strings.EqualFold(name, tagName) {
-			return model.Field(i).Interface()
-		}
-	}
-	return nil
+// Describe ...
+type Describe struct {
+	Name         string
+	ModelType    reflect.Type
+	Fields       []*Field
+	FieldsByName map[string]*Field
 }
+
+// Field ...
+type Field struct {
+	Name              string
+	FieldType         reflect.Type
+	IndirectFieldType reflect.Type
+	StructField       reflect.StructField
+	Creatable         bool
+	Updatable         bool
+	Readable          bool
+	Post              bool
+	Put               bool
+	Get               bool
+	Patch             bool
+	Tag               reflect.StructTag
+	TagSettings       map[string]string
+}
+
+// TimeReflectType ...
+var TimeReflectType = reflect.TypeOf(time.Time{})
 
 const (
 	// ForeignOfModelName ...
@@ -128,19 +107,170 @@ const (
 	ForeignOfModelForeignID = 3
 )
 
-func foreignOfModel(inter interface{}) [][4]string {
-	ret := make([][4]string, 0)
-
-	model := reflect.ValueOf(inter)
-	if model.Kind() == reflect.Ptr {
-		model = model.Elem()
+func equalBuiltinInterface(a, b interface{}) bool {
+	v1, err := builtinValue(a)
+	if err != nil {
+		return false
 	}
-	for i := 0; i < model.NumField(); i++ {
-		fieldType := model.Type().Field(i)
-		if name, id, ft, fk, err := disassembleTag(fieldType.Tag.Get("lazy")); err == nil && len(ft) > 0 && len(fk) > 0 {
-			ret = append(ret, [4]string{name, id, ft, fk})
+	v2, err := builtinValue(b)
+	if err != nil {
+		return false
+	}
+	return reflect.DeepEqual(v1, v2)
+
+}
+
+func assembleMany2Many(self []interface{}, join, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, joinPrimaryKeyName, joinForeignKeyName, expJSONName string) ([]interface{}, error) {
+	ret := make([]interface{}, len(self))
+	for _, vSelf := range self {
+		exp := make([]interface{}, 0)
+		vPrimary, err := valueOfField(vSelf, primaryKeyName)
+		if err != nil {
+			return nil, err
+		}
+		for _, vJoin := range join {
+			if vJoinPrimary, ok := vJoin[joinPrimaryKeyName]; ok {
+				if equalBuiltinInterface(vPrimary, vJoinPrimary) {
+					joinFKeyValue := vJoin[joinForeignKeyName]
+					for _, vForeign := range foreign {
+						if fKeyValue, ok := vForeign[foreignKeyName]; ok {
+							if equalBuiltinInterface(fKeyValue, joinFKeyValue) {
+								exp = append(exp, vForeign)
+							}
+						}
+					}
+				}
+			}
+		}
+		if err := setFieldWithJSONString(vSelf, expJSONName, exp); err != nil {
+			logrus.WithError(err).Error()
+			return ret, err
 		}
 	}
+	return ret, nil
+}
 
-	return ret
+func assembleHasMany(self []interface{}, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, expJSONName string) ([]interface{}, error) {
+	ret := make([]interface{}, len(self))
+	for _, vSelf := range self {
+		exp := make([]interface{}, 0)
+		value, err := valueOfField(vSelf, primaryKeyName)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, vForeign := range foreign {
+			if sameKeyValue, ok := vForeign[foreignKeyName]; ok {
+				v1, err := builtinValue(sameKeyValue)
+				if err != nil {
+					return nil, err
+				}
+				v2, err := builtinValue(value)
+				if err != nil {
+					return nil, err
+				}
+				if reflect.DeepEqual(v1, v2) {
+					exp = append(exp, vForeign)
+				}
+			}
+		}
+
+		if err := setFieldWithJSONString(vSelf, expJSONName, exp); err != nil {
+			logrus.WithError(err).Error()
+			return ret, err
+		}
+	}
+	return ret, nil
+}
+
+func assembleBelongTo(self []interface{}, foreign []map[string]interface{}, primaryKeyName, foreignKeyName, expJSONName string) ([]interface{}, error) {
+	ret := make([]interface{}, len(self))
+	for _, vSelf := range self {
+		var exp interface{}
+		value, err := valueOfField(vSelf, primaryKeyName)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, vForeign := range foreign {
+			if sameKeyValue, ok := vForeign[foreignKeyName]; ok {
+				v1, err := builtinValue(sameKeyValue)
+				if err != nil {
+					return nil, err
+				}
+				v2, err := builtinValue(value)
+				if err != nil {
+					return nil, err
+				}
+				if reflect.DeepEqual(v1, v2) {
+					exp = vForeign
+				}
+			}
+		}
+
+		if err := setFieldWithJSONString(vSelf, expJSONName, exp); err != nil {
+			logrus.WithError(err).Error()
+			return ret, err
+		}
+	}
+	return ret, nil
+}
+
+func builtinValue(i interface{}) (o interface{}, err error) {
+
+	value := reflect.ValueOf(i)
+
+	switch value.Kind() {
+	// case reflect.Int64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
+	// 	o = int64(i.())
+	// 	return
+	// case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	// 	o = i.(uint64)
+	// 	return
+	// case reflect.Uintptr:
+	// 	// TODO:
+	// 	return nil, fmt.Errorf("unsupported")
+
+	case reflect.Uint:
+		o = uint(i.(uint))
+		return o, nil
+	case reflect.Uint64:
+		o = uint(i.(uint64))
+		return o, nil
+	case reflect.Uint32:
+		o = uint(i.(uint32))
+		return o, nil
+	case reflect.Uint16:
+		o = uint(i.(uint16))
+		return o, nil
+	case reflect.Uint8:
+		o = uint(i.(uint8))
+		return o, nil
+	case reflect.Int:
+		o = uint(i.(int))
+		return o, nil
+	case reflect.Int64:
+		o = uint(i.(int64))
+		return o, nil
+	case reflect.Int32:
+		o = uint(i.(int32))
+		return o, nil
+	case reflect.Int16:
+		o = uint(i.(int16))
+		return o, nil
+	case reflect.Int8:
+		o = uint(i.(int8))
+		return o, nil
+	case reflect.String:
+		o = i.(string)
+		return o, nil
+	case reflect.Bool:
+		// if kv, err := strconv.ParseBool(v); err == nil {
+		// 	ret = kv
+		// }
+		return nil, fmt.Errorf("unsupported")
+	default:
+		// TODO:
+		return nil, fmt.Errorf("unsupported")
+	}
 }

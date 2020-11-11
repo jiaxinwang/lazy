@@ -1,77 +1,100 @@
 package lazy
 
 import (
+	"fmt"
+	"log"
 	"os"
+	"path"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type Response struct {
 	Data     interface{} `json:"data"`
-	ErrorMsg string      `json:KeyErrorMessage`
+	ErrorMsg string      `json:"error_msg"`
 	ErrorNo  int         `json:"error_no"`
 }
 
 // Food many to many dog
 type Food struct {
-	ID        uint      `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
-	CreatedAt time.Time `json:"created_at" lazy:"created_at" mapstructure:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" lazy:"updated_at" mapstructure:"updated_at"`
-	Brand     string    `json:"brand" lazy:"brand" mapstructure:"brand"`
+	ID        uint      `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
+	Brand     string    `json:"brand"`
 }
 
 // Owner has one dog
 type Owner struct {
-	ID        uint      `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
-	CreatedAt time.Time `json:"created_at" lazy:"created_at" mapstructure:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" lazy:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name" lazy:"name" mapstructure:"name"`
-	Dog       Dog       `json:"dog" mapstructure:"dog" lazy:"dog;foreign:id->dogs.owner_id"`
+	ID        uint      `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
+	Name      string    `json:"name"`
 }
 
 // Dog has many toys
 type Dog struct {
-	ID        uint      `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
-	CreatedAt time.Time `json:"created_at" lazy:"created_at" mapstructure:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" lazy:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name" lazy:"name" mapstructure:"name"`
-	OwnerID   uint      `json:"owner_id" lazy:"owner_id" mapstructure:"owner_id"`
-	Toys      []Toy     `json:"toys" lazy:"toys" mapstructure:"toys"`
-	Foods     []Food    `json:"foods" lazy:"foods" mapstructure:"foods" gorm:"many2many:dog_foods"`
-	BreedID   uint      `json:"bread_id" lazy:"breed_id" mapstructure:"breed_id"`
+	ID        uint      `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
+	Name      string    `json:"name"`
+	OwnerID   int       `json:"owner_id" mapstructure:"owner_id"`
+	Owner     Owner     `json:"owner"`
+	Toys      []Toy     `json:"toys"`
+	Foods     []Food    `json:"foods" gorm:"many2many:dog_foods"`
+	BreedID   uint      `json:"bread_id"`
 }
 
 // Profile belongs to a dog
 type Profile struct {
-	ID        uint      `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
-	CreatedAt time.Time `json:"created_at" lazy:"created_at" mapstructure:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" lazy:"updated_at" mapstructure:"updated_at"`
-	Age       uint      `json:"age" lazy:"age" mapstructure:"age"`
-	DogID     uint      `json:"-" lazy:"dog_id" mapstructure:"dog_id"`
-	Dog       Dog       `json:"dog" lazy:"dog" mapstructure:"dog"`
+	ID        uint      `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
+	Age       uint      `json:"age"`
+	DogID     uint      `json:"-"`
+	Dog       Dog       `json:"dog"`
 }
 
 type Toy struct {
-	ID        uint      `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
-	CreatedAt time.Time `json:"created_at" lazy:"created_at" mapstructure:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" lazy:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name" lazy:"name" mapstructure:"name"`
-	DogID     uint      `json:"dog_id" lazy:"dog_id" mapstructure:"dog_id"`
+	ID        uint      `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
+	Name      string    `json:"name"`
+	DogID     uint      `json:"dog_id"`
 }
 
 type Breed struct {
-	ID        uint      `gorm:"primarykey" json:"id" lazy:"id" mapstructure:"id"`
-	CreatedAt time.Time `json:"created_at" lazy:"created_at" mapstructure:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" lazy:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name" lazy:"name" mapstructure:"name"`
+	ID        uint      `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
+	Name      string    `json:"name"`
 }
 
 var gormDB *gorm.DB
 
 func TestMain(m *testing.M) {
+	logrus.SetFormatter(&nested.Formatter{
+		TrimMessages:    true,
+		TimestampFormat: "0102-150405",
+		NoFieldsSpace:   true,
+		HideKeys:        false,
+		ShowFullLevel:   true,
+		CallerFirst:     false,
+		FieldsOrder:     []string{"component", "category"},
+		CustomCallerFormatter: func(f *runtime.Frame) string {
+			s := strings.Split(f.Function, ".")
+			funcName := s[len(s)-1]
+			return fmt.Sprintf(" [%s:%d][%s()]", path.Base(f.File), f.Line, funcName)
+		},
+	})
+	logrus.SetReportCaller(true)
 	logrus.SetLevel(logrus.DebugLevel)
 	setup()
 	defer os.Exit(m.Run())
@@ -80,17 +103,29 @@ func TestMain(m *testing.M) {
 	}()
 }
 
-func initTeseDB() {
+func initTestDB() {
 	var err error
 	os.Remove("./test.db")
-	gormDB, err = gorm.Open("sqlite3", "./test.db")
+
+	gormDB, err = gorm.Open(sqlite.Open("./test.db"), &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags),
+			logger.Config{
+				SlowThreshold: time.Second,
+				LogLevel:      logger.Info,
+				// LogLevel:      logger.Silent,
+				Colorful: true,
+			},
+		),
+	})
+
 	if err != nil {
 		panic(err)
 	}
 
 	gormDB.AutoMigrate(&Dog{}, &Profile{}, &Breed{}, &Toy{}, &Food{}, &Owner{})
 
-	register(&Dog{}, &Profile{}, &Breed{}, &Toy{}, &Food{}, &Owner{})
+	Register(&Dog{}, &Profile{}, &Breed{}, &Toy{}, &Food{}, &Owner{})
 
 	ownerNames := []string{
 		`Bowie`,
@@ -129,13 +164,14 @@ func initTeseDB() {
 
 	dog := &Dog{Name: "Charlie", OwnerID: 1, BreedID: 1}
 	gormDB.Create(dog)
-	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
-	gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
+	gormDB.Model(dog).Association("Foods").Append(pedigree)
+	// gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
+	// gormDB.Model(dog).Association("Toys").Append(&Toy{Name: `Tug`}, &Toy{Name: `Toss`})
 
 	dog = &Dog{Name: "Max", OwnerID: 2, BreedID: 2}
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
-	gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
+	gormDB.Model(dog).Association("Toys").Append(&Toy{Name: `Tug`, DogID: dog.ID}, &Toy{Name: `Toss`, DogID: dog.ID})
 
 	dog = &Dog{Name: "Buddy", OwnerID: 3, BreedID: 3}
 	gormDB.Create(dog)
@@ -161,7 +197,7 @@ func initTeseDB() {
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
 
-	dog = &Dog{Name: "Jack", OwnerID: 9, BreedID: 3}
+	dog = &Dog{Name: "Jack", OwnerID: 1, BreedID: 3}
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
 
@@ -171,11 +207,25 @@ func initTeseDB() {
 }
 
 func setup() {
+	logrus.SetFormatter(&nested.Formatter{
+		TrimMessages:    true,
+		TimestampFormat: "-",
+		NoFieldsSpace:   true,
+		HideKeys:        false,
+		ShowFullLevel:   true,
+		CallerFirst:     false,
+		FieldsOrder:     []string{"component", "category"},
+		CustomCallerFormatter: func(f *runtime.Frame) string {
+			s := strings.Split(f.Function, ".")
+			funcName := s[len(s)-1]
+			return fmt.Sprintf(" [%s:%d][%s()]", path.Base(f.File), f.Line, funcName)
+		},
+	})
 	logrus.SetReportCaller(true)
-	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
 }
 
 func teardown() {
-	gormDB.Close()
+	d, _ := gormDB.DB()
+	d.Close()
 	os.Remove("./test.db")
 }

@@ -1,6 +1,6 @@
 language: golang
 go:
-  - 1.14
+  - 1.15.3
   - master
 
 script:

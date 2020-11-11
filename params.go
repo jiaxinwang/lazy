@@ -6,19 +6,35 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
 // Params maps a string key to a list of values.
-type Params map[string][]string
+// type Params map[string][]string
 
-func mergeParams(a, b Params) (ret Params) {
-	return
+func params(c *gin.Context) (map[string][]string, error) {
+	paramsItr, ok := c.Get(KeyParams)
+	if !ok {
+		return nil, ErrParamMissing
+	}
+	params, ok := paramsItr.(map[string][]string)
+	if !ok {
+		return nil, ErrUnknown
+	}
+	return params, nil
 }
 
-func valueOfParams(params Params, key string) (value string) {
+func valueSliceWithParamKey(params map[string][]string, key string) []string {
+	if v, exist := params[key]; exist {
+		return v
+	}
+	return nil
+}
+
+func valueOfSingleParam(params map[string][]string, key string) (value string) {
 	if v, exist := params[key]; exist {
 		if len(v) == 1 {
 			return v[0]
@@ -27,21 +43,21 @@ func valueOfParams(params Params, key string) (value string) {
 	return ``
 }
 
-func separatePage(params Params) (filterParams Params, page, limit, offset uint64) {
-	var s Params
+func separatePage(params map[string][]string) (filterParams map[string][]string, page, limit, offset uint64) {
+	var s map[string][]string
 	s, filterParams = separateParams(params, "offset", "page", "limit")
-	str := valueOfParams(s, `offset`)
+	str := valueOfSingleParam(s, `offset`)
 	offset, _ = strconv.ParseUint(str, 10, 64)
-	str = valueOfParams(s, `page`)
+	str = valueOfSingleParam(s, `page`)
 	page, _ = strconv.ParseUint(str, 10, 64)
-	str = valueOfParams(s, `limit`)
+	str = valueOfSingleParam(s, `limit`)
 	limit, _ = strconv.ParseUint(str, 10, 64)
 	return
 }
 
-func separateParams(whole Params, keys ...string) (separated, remain Params) {
-	separated = make(Params)
-	remain = make(Params)
+func separateParams(whole map[string][]string, keys ...string) (separated, remain map[string][]string) {
+	separated = make(map[string][]string)
+	remain = make(map[string][]string)
 	for k, v := range whole {
 		remain[k] = v
 	}
@@ -58,7 +74,7 @@ func separateParams(whole Params, keys ...string) (separated, remain Params) {
 	return
 }
 
-func separatePrefixParams(whole Params, prefix string) (separated, remain Params) {
+func separatePrefixParams(whole map[string][]string, prefix string) (separated, remain map[string][]string) {
 	keys := make([]string, 0)
 	for k := range whole {
 		if strings.HasPrefix(k, prefix) {
@@ -66,6 +82,42 @@ func separatePrefixParams(whole Params, prefix string) (separated, remain Params
 		}
 	}
 	return separateParams(whole, keys...)
+}
+
+// ContentParams return params in content
+func ContentParams(c *gin.Context) (union, query, body map[string]interface{}) {
+	if v, ok := c.Get(KeyParamsUnion); ok {
+		union = v.(map[string]interface{})
+	} else {
+		union = make(map[string]interface{})
+	}
+	if v, ok := c.Get(KeyParams); ok {
+		p := v.(map[string][]string)
+		query = make(map[string]interface{})
+		for kk, vv := range p {
+			query[kk] = vv
+		}
+	} else {
+		query = make(map[string]interface{})
+	}
+	if v, ok := c.Get(KeyBody); ok {
+		body = v.(map[string]interface{})
+	} else {
+		body = make(map[string]interface{})
+	}
+	return
+}
+
+// ContentParamWithJSONPath ...
+func ContentParamWithJSONPath(c *gin.Context, jsonPath string) (param interface{}) {
+	_, _, body := ContentParams(c)
+	var srcStr string
+	var err error
+	if srcStr, err = json.MarshalToString(body); err != nil {
+		return
+	}
+	ret := gjson.Get(srcStr, jsonPath)
+	return ret.Value()
 }
 
 // SetJSON ...
