@@ -87,7 +87,7 @@ func DefaultRelatedPostAction(c *gin.Context, actionConfig *Action, payload inte
 						inters = append(inters, single)
 					}
 
-					setFieldWithJSONString(config.Model, "Foods", nil)
+					setFieldWithJSONString(config.Model, v.Name, nil)
 					config.DB.Model(config.Model).Association(v.Name).Clear()
 
 					if err := setFieldWithJSONString(config.Model, v.Field.StructField.Tag.Get("json"), inters); err != nil {

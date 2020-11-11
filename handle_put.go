@@ -54,7 +54,14 @@ func DefaultPutAction(c *gin.Context, actionConfig *Action, payload interface{})
 	cloned := clone(config.Model)
 	MapStruct(mapResult, cloned)
 
-	for _, v := range m.Relationships.Relations {
+	for _, v := range m.Relationships.HasMany {
+		err = config.DB.Model(cloned).Association(v.Name).Clear()
+		if err != nil && err != gorm.ErrRecordNotFound {
+			logrus.WithError(err).Error()
+			return nil, err
+		}
+	}
+	for _, v := range m.Relationships.Many2Many {
 		err = config.DB.Model(cloned).Association(v.Name).Clear()
 		if err != nil && err != gorm.ErrRecordNotFound {
 			logrus.WithError(err).Error()

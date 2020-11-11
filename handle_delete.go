@@ -33,8 +33,6 @@ func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface
 						config.DB.Table(vM2M.JoinTable.Table).Where(fmt.Sprintf("%s in ?", vM2M.JoinTable.Fields[1].DBName), ids).Delete(nil)
 					}
 				}
-				// for _, vMany := range m2.Relationships.HasMany {
-				// }
 			}
 		}
 	}
@@ -51,7 +49,14 @@ func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface
 		cloned := clone(config.Model)
 		MapStruct(mapResult, cloned)
 
-		for _, v := range m.Relationships.Relations {
+		for _, v := range m.Relationships.HasMany {
+			err = config.DB.Model(cloned).Association(v.Name).Clear()
+			if err != nil && err != gorm.ErrRecordNotFound {
+				logrus.WithError(err).Error()
+				return nil, err
+			}
+		}
+		for _, v := range m.Relationships.Many2Many {
 			err = config.DB.Model(cloned).Association(v.Name).Clear()
 			if err != nil && err != gorm.ErrRecordNotFound {
 				logrus.WithError(err).Error()
