@@ -376,14 +376,6 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 				}
 
 			}
-			logrus.WithFields(
-				logrus.Fields{
-					"DBName": vField.DBName,
-					"Name":   vField.Name,
-					"Kind":   vField.FieldType.Kind(),
-				},
-			).Info()
-
 		}
 	}
 
