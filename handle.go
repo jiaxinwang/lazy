@@ -125,14 +125,6 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		needGroup = true
 	}
 
-	// for k, v := range qParams.Many2Many {
-	// 	logrus.WithField("kk", k).WithField("v", v).Info()
-	// 	var ids []int64
-	// 	config.DB.Table(v.JoinTable).Where(fmt.Sprintf("%s in ?", v.JoinTableForeignFieldName), v.Values).Pluck(v.JoinTableFieldName, &ids)
-	// 	logrus.Print(ids)
-	// 	qParams.Eq["id"] = toGenericArray(ids)
-	// }
-
 	tx.Limit(int(qParams.Limit)).Offset(int(qParams.Limit*qParams.Page + qParams.Offset)).Find(&mapResults)
 
 	count := int64(len(mapResults))

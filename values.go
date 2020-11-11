@@ -11,53 +11,6 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-// StructMap converts struct to map
-func StructMap(src interface{}, timeLayout string) (ret map[string]interface{}, err error) {
-	if b, err := json.Marshal(src); err != nil {
-		return nil, err
-	} else {
-		ret = make(map[string]interface{})
-		if err = json.Unmarshal(b, &ret); err != nil {
-			return nil, err
-		}
-
-		switch v := reflect.ValueOf(src); v.Kind() {
-		case reflect.Struct:
-			vofs := reflect.ValueOf(src)
-			for i := 0; i < vofs.NumField(); i++ {
-				switch vofs.Field(i).Interface().(type) {
-				case *time.Time:
-					t := vofs.Field(i).Interface().(*time.Time)
-					name, err := dbNameWithFieldName(v, vofs.Field(i).Type().Name())
-					if err != nil {
-						logrus.WithError(fmt.Errorf("can't find schema field name: %s", name)).Warn()
-						continue
-					}
-
-					if _, ok := ret[name]; ok {
-						if t != nil {
-							ret[name] = t.Format(timeLayout)
-						}
-					}
-				case time.Time:
-					t := vofs.Field(i).Interface().(time.Time)
-					name, err := dbNameWithFieldName(v, vofs.Field(i).Type().Name())
-					if err != nil {
-						logrus.WithError(fmt.Errorf("can't find schema field name: %s", name)).Warn()
-						continue
-					}
-					if _, ok := ret[name]; ok {
-						ret[name] = t.Format(timeLayout)
-					}
-				}
-			}
-		default:
-		}
-
-		return ret, nil
-	}
-}
-
 func toTimeHookFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
@@ -78,30 +31,6 @@ func toTimeHookFunc() mapstructure.DecodeHookFunc {
 			return data, nil
 		}
 	}
-}
-
-// Map2StructWithJSON ...
-func Map2StructWithJSON(input map[string]interface{}, result interface{}) (err error) {
-	var s string
-	if s, err = json.MarshalToString(input); err != nil {
-		return fmt.Errorf("can't json marshal: %w", err)
-	}
-	if err = json.UnmarshalFromString(s, result); err != nil {
-		return fmt.Errorf("can't json unmarshal: %w", err)
-	}
-	return
-}
-
-// MapSlice2StructSliceWithJSON ...
-func MapSlice2StructSliceWithJSON(input []map[string]interface{}, result *[]interface{}) (err error) {
-	var s string
-	if s, err = json.MarshalToString(input); err != nil {
-		return fmt.Errorf("can't json marshal: %w", err)
-	}
-	if err = json.UnmarshalFromString(s, result); err != nil {
-		return fmt.Errorf("can't json unmarshal: %w", err)
-	}
-	return
 }
 
 // MapStruct converts map to struct
