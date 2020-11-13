@@ -86,6 +86,7 @@ func MiddlewareExec(c *gin.Context) {
 			for _, v := range config.Action {
 				if _, err := v.Action(c, &v, v.Payload); err != nil {
 					c.Set(KeyErrorMessage, err.Error())
+					break
 				}
 			}
 		}
@@ -98,24 +99,16 @@ func MiddlewareExec(c *gin.Context) {
 func MiddlewareResponse(c *gin.Context) {
 	defer func() {
 		ret := make(map[string]interface{})
-		if v, ok := c.Get(keyData); ok {
-			ret = v.(map[string]interface{})
-		}
-		if _, ok := ret["data"]; !ok {
-			ret["data"] = nil
-		}
-		if _, ok := ret["error_no"]; !ok {
-			if _, ok := ret[KeyErrorMessage]; ok {
-				ret["error_no"] = 400
-			} else {
-				ret["error_no"] = 0
+		ret["request_id"] = c.MustGet("requestID")
+		if v, ok := c.Get(KeyErrorMessage); ok {
+			ret["error_no"] = 400
+			ret["error_msg"] = v.(string)
+		} else {
+			if v, ok := c.Get(keyData); ok {
+				ret = v.(map[string]interface{})
 			}
 		}
-		if _, ok := ret[KeyErrorMessage]; !ok {
-			ret[KeyErrorMessage] = ``
-		}
 
-		ret["request_id"] = c.MustGet("requestID")
 		c.JSON(200, ret)
 	}()
 	c.Next()

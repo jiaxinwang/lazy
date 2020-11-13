@@ -7,10 +7,11 @@ import (
 
 // Configuration configs lazy values and actions
 type Configuration struct {
-	DB        *gorm.DB
-	Model     interface{}
-	NeedCount bool
-	Action    []Action
+	DB                     *gorm.DB
+	Model                  interface{}
+	DisableAssociationMode bool
+	NeedCount              bool
+	Action                 []Action
 }
 
 // JSONPathMap ...
@@ -23,14 +24,15 @@ type JSONPathMap struct {
 
 // Action ...
 type Action struct {
-	DB         *gorm.DB
-	Model      interface{}
-	Params     []JSONPathMap
-	ResultMaps []JSONPathMap
-	Validates  map[string]string
-	NeedCount  bool
-	Payload    interface{}
-	Action     func(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error)
+	DB                     *gorm.DB
+	Model                  interface{}
+	Params                 []JSONPathMap
+	ResultMaps             []JSONPathMap
+	Validates              map[string]string
+	NeedCount              bool
+	DisableAssociationMode bool
+	Payload                interface{}
+	Action                 func(c *gin.Context, actionConfig *Action, payload interface{}) (data []map[string]interface{}, err error)
 }
 
 // HTTPRequest ...

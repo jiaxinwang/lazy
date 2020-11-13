@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -67,4 +68,36 @@ func TestDefaultPostAction(t *testing.T) {
 			)
 		}
 	}
+}
+
+func TestDefaultPostActionDup(t *testing.T) {
+	initTestDB()
+	r := defaultDogRouter(router())
+	b := `{"name":"test-post-dog-1"}`
+
+	w := httptest.NewRecorder()
+
+	contentBuffer := bytes.NewBuffer([]byte(b))
+	req, _ := http.NewRequest("POST", "/dogs", contentBuffer)
+
+	r.ServeHTTP(w, req)
+	response := Response{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, 200, w.Code)
+	assert.NoError(t, err)
+
+	logrus.Print(w.Body.String())
+
+	w = httptest.NewRecorder()
+
+	contentBuffer = bytes.NewBuffer([]byte(b))
+	req, _ = http.NewRequest("POST", "/dogs", contentBuffer)
+
+	r.ServeHTTP(w, req)
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, 200, w.Code)
+	assert.NoError(t, err)
+
+	logrus.Print(w.Body.String())
+
 }
