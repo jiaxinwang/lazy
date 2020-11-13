@@ -24,13 +24,15 @@ func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface
 
 	m, err := schema.Parse(config.Model, schemaStore, schema.NamingStrategy{})
 
-	for k, v := range registry {
-		if v != m.ModelType {
-			newStruct, _ := NewStruct(k)
-			if m2, err := schema.Parse(newStruct, schemaStore, schema.NamingStrategy{}); err == nil {
-				for _, vM2M := range m2.Relationships.Many2Many {
-					if m.ModelType == vM2M.Field.StructField.Type.Elem() {
-						config.DB.Table(vM2M.JoinTable.Table).Where(fmt.Sprintf("%s in ?", vM2M.JoinTable.Fields[1].DBName), ids).Delete(nil)
+	if !actionConfig.DisableAssociationMode || !config.DisableAssociationMode {
+		for k, v := range registry {
+			if v != m.ModelType {
+				newStruct, _ := NewStruct(k)
+				if m2, err := schema.Parse(newStruct, schemaStore, schema.NamingStrategy{}); err == nil {
+					for _, vM2M := range m2.Relationships.Many2Many {
+						if m.ModelType == vM2M.Field.StructField.Type.Elem() {
+							config.DB.Table(vM2M.JoinTable.Table).Where(fmt.Sprintf("%s in ?", vM2M.JoinTable.Fields[1].DBName), ids).Delete(nil)
+						}
 					}
 				}
 			}
@@ -49,18 +51,20 @@ func DefaultDeleteAction(c *gin.Context, actionConfig *Action, payload interface
 		cloned := clone(config.Model)
 		MapStruct(mapResult, cloned)
 
-		for _, v := range m.Relationships.HasMany {
-			err = config.DB.Model(cloned).Association(v.Name).Clear()
-			if err != nil && err != gorm.ErrRecordNotFound {
-				logrus.WithError(err).Error()
-				return nil, err
+		if !actionConfig.DisableAssociationMode || !config.DisableAssociationMode {
+			for _, v := range m.Relationships.HasMany {
+				err = config.DB.Model(cloned).Association(v.Name).Clear()
+				if err != nil && err != gorm.ErrRecordNotFound {
+					logrus.WithError(err).Error()
+					return nil, err
+				}
 			}
-		}
-		for _, v := range m.Relationships.Many2Many {
-			err = config.DB.Model(cloned).Association(v.Name).Clear()
-			if err != nil && err != gorm.ErrRecordNotFound {
-				logrus.WithError(err).Error()
-				return nil, err
+			for _, v := range m.Relationships.Many2Many {
+				err = config.DB.Model(cloned).Association(v.Name).Clear()
+				if err != nil && err != gorm.ErrRecordNotFound {
+					logrus.WithError(err).Error()
+					return nil, err
+				}
 			}
 		}
 	}
