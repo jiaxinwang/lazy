@@ -44,7 +44,7 @@ type Dog struct {
 	ID        uint      `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
-	Name      string    `json:"name"`
+	Name      string    `gorm:"unique" json:"name"`
 	OwnerID   int       `json:"owner_id" mapstructure:"owner_id"`
 	Owner     Owner     `json:"owner"`
 	Toys      []Toy     `json:"toys"`
