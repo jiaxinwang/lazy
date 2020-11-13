@@ -68,3 +68,26 @@ func TestDefaultPostAction(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultPostActionDup(t *testing.T) {
+	initTestDB()
+	r := defaultDogRouter(router())
+	b := `{"name":"test-post-dog-1"}`
+
+	w := httptest.NewRecorder()
+
+	contentBuffer := bytes.NewBuffer([]byte(b))
+	req, _ := http.NewRequest("POST", "/dogs", contentBuffer)
+
+	r.ServeHTTP(w, req)
+	response := Response{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, 200, w.Code)
+	assert.NoError(t, err)
+
+	r.ServeHTTP(w, req)
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, 200, w.Code)
+	assert.NoError(t, err)
+
+}
