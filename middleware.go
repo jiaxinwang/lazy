@@ -99,7 +99,6 @@ func MiddlewareExec(c *gin.Context) {
 func MiddlewareResponse(c *gin.Context) {
 	defer func() {
 		ret := make(map[string]interface{})
-		ret["request_id"] = c.MustGet("requestID")
 		if v, ok := c.Get(KeyErrorMessage); ok {
 			ret["error_no"] = 400
 			ret["error_msg"] = v.(string)
@@ -107,8 +106,10 @@ func MiddlewareResponse(c *gin.Context) {
 			if v, ok := c.Get(keyData); ok {
 				ret = v.(map[string]interface{})
 			}
+			ret["error_no"] = 0
+			ret["error_msg"] = ""
 		}
-
+		ret["request_id"] = c.MustGet("requestID")
 		c.JSON(200, ret)
 	}()
 	c.Next()

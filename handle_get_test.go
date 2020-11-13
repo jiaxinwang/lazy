@@ -30,6 +30,7 @@ func TestDefaultGetAction(t *testing.T) {
 	r.ServeHTTP(w, req)
 	response := Response{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
+	logrus.Print(w.Body.String())
 	assert.Equal(t, 200, w.Code)
 	assert.NoError(t, err)
 	var ret Ret
