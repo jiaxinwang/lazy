@@ -1,6 +1,7 @@
 package lazy
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,7 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *Action, payload interfac
 	case http.MethodGet:
 	case http.MethodHead:
 	case http.MethodPost:
+		logrus.WithField("RequestOption", fmt.Sprintf("%+v", ro)).Trace()
 		if resp, err = grequests.Post(url, ro); err != nil {
 			logrus.WithError(err).Error()
 			c.Set(KeyErrorMessage, err.Error())
