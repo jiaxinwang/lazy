@@ -9,16 +9,14 @@ import (
 )
 
 var (
-	logMode     = false
 	json        jsoniter.API
 	schemaStore *sync.Map
 	cacheStore  *sync.Map
 )
 
-// LogMode enable log
-func LogMode(v bool) {
-	// TODO:
-	logMode = v
+// LogLevel ...
+func LogLevel(level int) {
+	logrus.SetLevel(logrus.Level(level))
 }
 
 func init() {
