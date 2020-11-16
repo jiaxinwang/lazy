@@ -1,12 +1,13 @@
 package lazy
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/levigross/grequests"
 	"github.com/sirupsen/logrus"
+
+	"github.com/jiaxinwang/common/logger"
 )
 
 // DefaultNetworkAction ...
@@ -27,13 +28,15 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *Action, payload interfac
 
 	bodyByte, _ := json.Marshal(dest)
 	ro.JSON = bodyByte
+
+	logrus.WithField("RequestOption.JSON", logger.Pretty(dest)).Trace()
 	resp := &grequests.Response{}
 
 	switch method {
 	case http.MethodGet:
 	case http.MethodHead:
 	case http.MethodPost:
-		logrus.WithField("RequestOption", fmt.Sprintf("%+v", ro)).Trace()
+
 		if resp, err = grequests.Post(url, ro); err != nil {
 			logrus.WithError(err).Error()
 			c.Set(KeyErrorMessage, err.Error())
