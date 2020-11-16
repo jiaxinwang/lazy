@@ -36,7 +36,6 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *Action, payload interfac
 	case http.MethodGet:
 	case http.MethodHead:
 	case http.MethodPost:
-
 		if resp, err = grequests.Post(url, ro); err != nil {
 			logrus.WithError(err).Error()
 			c.Set(KeyErrorMessage, err.Error())
@@ -63,6 +62,6 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *Action, payload interfac
 	}
 
 	c.Set(keyResults, ret)
-	logrus.WithField(keyData, ret).Trace()
+	logrus.WithField("keyData", logger.Pretty(ret)).Trace()
 	return []map[string]interface{}{ret}, nil
 }
