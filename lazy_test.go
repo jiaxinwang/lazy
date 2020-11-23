@@ -50,6 +50,8 @@ type Dog struct {
 	Toys      []Toy     `json:"toys"`
 	Foods     []Food    `json:"foods" gorm:"many2many:dog_foods"`
 	BreedID   uint      `json:"bread_id"`
+	Good      bool      `json:"good"`
+	Bad       bool      `json:"bad"`
 }
 
 // Profile belongs to a dog
@@ -162,13 +164,13 @@ func initTestDB() {
 	diamond := &Food{Brand: `Diamond`}
 	gormDB.Create(diamond)
 
-	dog := &Dog{Name: "Charlie", OwnerID: 1, BreedID: 1}
+	dog := &Dog{Name: "Charlie", OwnerID: 1, BreedID: 1, Good: true}
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree)
 	// gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
 	// gormDB.Model(dog).Association("Toys").Append(&Toy{Name: `Tug`}, &Toy{Name: `Toss`})
 
-	dog = &Dog{Name: "Max", OwnerID: 2, BreedID: 2}
+	dog = &Dog{Name: "Max", OwnerID: 2, BreedID: 2, Bad: true}
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree, purina, diamond)
 	gormDB.Model(dog).Association("Toys").Append(&Toy{Name: `Tug`, DogID: dog.ID}, &Toy{Name: `Toss`, DogID: dog.ID})

@@ -97,7 +97,12 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	}
 
 	for k, v := range qParams.Eq {
-		tx = tx.Where(fmt.Sprintf("%s IN ?", k), v)
+		if len(v) == 1 {
+			tx = tx.Where(fmt.Sprintf("%s = ?", k), v[0])
+		} else {
+			tx = tx.Where(fmt.Sprintf("%s IN ?", k), v)
+		}
+
 	}
 	for k, v := range qParams.Gt {
 		tx = tx.Where(fmt.Sprintf("%s > ?", k), v)

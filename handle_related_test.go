@@ -38,7 +38,7 @@ func TestDefaultRelatedHasManyPostAction(t *testing.T) {
 			return
 		}
 
-		ignoreDog := []string{"ID", "CreatedAt", "UpdatedAt", "Foods", "Name", "BreedID", "OwnerID"}
+		ignoreDog := []string{"ID", "CreatedAt", "UpdatedAt", "Foods", "Name", "BreedID", "OwnerID", "Good", "Bad"}
 		ignoreToy := []string{"ID", "CreatedAt", "UpdatedAt", "DogID"}
 
 		if !cmp.Equal(
@@ -89,7 +89,7 @@ func TestDefaultRelatedMany2ManyPostAction(t *testing.T) {
 			return
 		}
 
-		ignoreDog := []string{"ID", "CreatedAt", "UpdatedAt", "Toys", "Name", "BreedID", "OwnerID"}
+		ignoreDog := []string{"ID", "CreatedAt", "UpdatedAt", "Toys", "Name", "BreedID", "OwnerID", "Good", "Bad"}
 		ignoreFood := []string{"ID", "CreatedAt", "UpdatedAt"}
 
 		if !cmp.Equal(

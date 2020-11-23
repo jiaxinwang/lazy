@@ -195,7 +195,12 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 			case reflect.Bool:
 				key := fmt.Sprintf("%s", jsonKey)
 				if v, ok := valueOfMap(params, key); ok {
-					queryParam.Eq[jsonKey] = toGenericArray(v)
+					switch v[0] {
+					case "1", "true", "t":
+						queryParam.Eq[jsonKey] = []interface{}{true}
+					case "0", "false", "f":
+						queryParam.Eq[jsonKey] = []interface{}{false}
+					}
 				}
 			case reflect.Struct:
 				t := time.Now()
