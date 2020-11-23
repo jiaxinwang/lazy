@@ -53,6 +53,7 @@ func DefaultPatchAction(c *gin.Context, actionConfig *Action, payload interface{
 		logrus.WithError(err).Error()
 		return nil, err
 	}
+	delete(newValue, "id")
 
 	err = config.DB.Model(config.Model).Updates(newValue).Error
 	if err != nil {
