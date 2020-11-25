@@ -130,8 +130,6 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		needGroup = true
 	}
 
-	tx.Limit(int(qParams.Limit)).Offset(int(qParams.Limit*qParams.Page + qParams.Offset)).Find(&mapResults)
-
 	count := int64(len(mapResults))
 	if config.NeedCount {
 		if needGroup {
@@ -145,6 +143,8 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 			tx.Count(&count)
 		}
 	}
+
+	tx.Limit(int(qParams.Limit)).Offset(int(qParams.Limit*qParams.Page + qParams.Offset)).Find(&mapResults)
 
 	modelResults := make([]interface{}, len(mapResults))
 	for k, v := range mapResults {
