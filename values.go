@@ -92,6 +92,7 @@ type QueryParam struct {
 	Lte       map[string][]interface{}
 	Gte       map[string][]interface{}
 	Like      map[string][]interface{}
+	Ignore    map[string][]interface{}
 	HasMany   map[string]HasManyQueryParam
 	Many2Many map[string]Many2ManyQueryParam
 	Page      int
@@ -121,6 +122,7 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 	queryParam.Gte = make(map[string][]interface{})
 	queryParam.Lte = make(map[string][]interface{})
 	queryParam.Like = make(map[string][]interface{})
+	queryParam.Ignore = make(map[string][]interface{})
 	queryParam.HasMany = make(map[string]HasManyQueryParam)
 	queryParam.Many2Many = make(map[string]Many2ManyQueryParam)
 
@@ -180,7 +182,6 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 					}
 				}
 			}
-
 		} else {
 			switch vField.FieldType.Kind() {
 			case reflect.String:
@@ -191,6 +192,10 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 				key = fmt.Sprintf("%s_like", jsonKey)
 				if v, ok := valueOfMap(params, key); ok {
 					queryParam.Like[jsonKey] = toGenericArray(v)
+				}
+				key = fmt.Sprintf("%s_ignore", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Ignore[jsonKey] = toGenericArray(v)
 				}
 			case reflect.Bool:
 				key := fmt.Sprintf("%s", jsonKey)

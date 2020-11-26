@@ -148,6 +148,12 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 
 	modelResults := make([]interface{}, len(mapResults))
 	for k, v := range mapResults {
+		if len(qParams.Ignore) != 0 {
+			for k := range qParams.Ignore {
+				delete(v, k)
+				logrus.Print(v)
+			}
+		}
 		if err := MapStruct(v, config.Model); err != nil {
 			return nil, err
 		}

@@ -180,3 +180,36 @@ func TestDefaultGetActionParamsBoolean(t *testing.T) {
 
 	assert.Equal(t, dbRet.ID, ret.Items[0].ID)
 }
+
+func TestDefaultGetActionIgnore(t *testing.T) {
+	initTestDB()
+	r := defaultDogRouter(router())
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/dogs", nil)
+
+	q := req.URL.Query()
+	q.Add("id", `1`)
+	q.Add("name_ignore", ``)
+	req.URL.RawQuery = q.Encode()
+
+	r.ServeHTTP(w, req)
+	response := Response{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, 200, w.Code)
+	assert.NoError(t, err)
+	var ret Ret
+	MapStruct(response.Data.(map[string]interface{}), &ret)
+
+	logrus.Printf("%+v", ret.Items)
+
+	var results []map[string]interface{}
+	var dbRet Dog
+
+	gormDB.Model(&Dog{}).Where("good = true").Find(&results)
+
+	assert.Equal(t, len(results), 1)
+	MapStruct(results[0], &dbRet)
+
+	assert.Equal(t, dbRet.ID, ret.Items[0].ID)
+}
