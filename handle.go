@@ -151,7 +151,7 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		if len(qParams.Ignore) != 0 {
 			for k := range qParams.Ignore {
 				delete(v, k)
-				logrus.Print(v)
+				// logrus.Print(v)
 			}
 		}
 		if err := MapStruct(v, config.Model); err != nil {
