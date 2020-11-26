@@ -55,15 +55,15 @@ func separatePage(params map[string][]string) (filterParams map[string][]string,
 	return
 }
 
-func separateParams(whole map[string][]string, keys ...string) (separated, remain map[string][]string) {
+func separateParams(maps map[string][]string, keys ...string) (separated, remain map[string][]string) {
 	separated = make(map[string][]string)
 	remain = make(map[string][]string)
-	for k, v := range whole {
+	for k, v := range maps {
 		remain[k] = v
 	}
 	for _, v := range keys {
-		if vInWhole, ok := whole[v]; ok {
-			separated[v] = vInWhole
+		if vItem, ok := maps[v]; ok {
+			separated[v] = vItem
 		}
 	}
 	for k := range separated {
