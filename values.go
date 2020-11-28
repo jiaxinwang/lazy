@@ -93,6 +93,7 @@ type QueryParam struct {
 	Gte       map[string][]interface{}
 	Like      map[string][]interface{}
 	Ignore    map[string][]interface{}
+	Order     map[string][]interface{}
 	HasMany   map[string]HasManyQueryParam
 	Many2Many map[string]Many2ManyQueryParam
 	Page      int
@@ -123,6 +124,7 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 	queryParam.Lte = make(map[string][]interface{})
 	queryParam.Like = make(map[string][]interface{})
 	queryParam.Ignore = make(map[string][]interface{})
+	queryParam.Order = make(map[string][]interface{})
 	queryParam.HasMany = make(map[string]HasManyQueryParam)
 	queryParam.Many2Many = make(map[string]Many2ManyQueryParam)
 
@@ -197,6 +199,10 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 				if v, ok := valueOfMap(params, key); ok {
 					queryParam.Ignore[jsonKey] = toGenericArray(v)
 				}
+				key = fmt.Sprintf("%s_order", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Order[jsonKey] = toGenericArray(v)
+				}
 			case reflect.Bool:
 				key := fmt.Sprintf("%s", jsonKey)
 				if v, ok := valueOfMap(params, key); ok {
@@ -257,6 +263,10 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 				key = fmt.Sprintf("%s_gte", jsonKey)
 				if v, ok := valueOfMap(params, key); ok {
 					queryParam.Gte[jsonKey] = toGenericArray(v)
+				}
+				key = fmt.Sprintf("%s_order", jsonKey)
+				if v, ok := valueOfMap(params, key); ok {
+					queryParam.Order[jsonKey] = toGenericArray(v)
 				}
 
 			}

@@ -117,6 +117,10 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 		tx = tx.Where(fmt.Sprintf("%s <= ?", k), v)
 	}
 
+	for _, v := range qParams.Order {
+		tx = tx.Order(v)
+	}
+
 	needGroup := false
 	dotName := ""
 	name := ""
