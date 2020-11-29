@@ -200,8 +200,8 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 					queryParam.Ignore[jsonKey] = toGenericArray(v)
 				}
 				key = fmt.Sprintf("%s_order", jsonKey)
-				if v, ok := valueOfMap(params, key); ok {
-					queryParam.Order[jsonKey] = toGenericArray(v)
+				if _, ok := valueOfMap(params, key); ok {
+					queryParam.Order[jsonKey] = []interface{}{}
 				}
 			case reflect.Bool:
 				key := fmt.Sprintf("%s", jsonKey)
@@ -266,7 +266,7 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 				}
 				key = fmt.Sprintf("%s_order", jsonKey)
 				if v, ok := valueOfMap(params, key); ok {
-					queryParam.Order[jsonKey] = toGenericArray(v)
+					queryParam.Order[jsonKey] = []interface{}{}
 				}
 
 			}
