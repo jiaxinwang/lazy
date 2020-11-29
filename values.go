@@ -94,6 +94,7 @@ type QueryParam struct {
 	Like      map[string][]interface{}
 	Ignore    map[string][]interface{}
 	Order     map[string][]interface{}
+	OrderDesc map[string][]interface{}
 	HasMany   map[string]HasManyQueryParam
 	Many2Many map[string]Many2ManyQueryParam
 	Page      int
@@ -125,6 +126,7 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 	queryParam.Like = make(map[string][]interface{})
 	queryParam.Ignore = make(map[string][]interface{})
 	queryParam.Order = make(map[string][]interface{})
+	queryParam.OrderDesc = make(map[string][]interface{})
 	queryParam.HasMany = make(map[string]HasManyQueryParam)
 	queryParam.Many2Many = make(map[string]Many2ManyQueryParam)
 
@@ -203,6 +205,10 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 				if _, ok := valueOfMap(params, key); ok {
 					queryParam.Order[jsonKey] = []interface{}{}
 				}
+				key = fmt.Sprintf("%s_order_desc", jsonKey)
+				if _, ok := valueOfMap(params, key); ok {
+					queryParam.OrderDesc[jsonKey] = []interface{}{}
+				}
 			case reflect.Bool:
 				key := fmt.Sprintf("%s", jsonKey)
 				if v, ok := valueOfMap(params, key); ok {
@@ -268,7 +274,10 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 				if _, ok := valueOfMap(params, key); ok {
 					queryParam.Order[jsonKey] = []interface{}{}
 				}
-
+				key = fmt.Sprintf("%s_order_desc", jsonKey)
+				if _, ok := valueOfMap(params, key); ok {
+					queryParam.OrderDesc[jsonKey] = []interface{}{}
+				}
 			}
 		}
 	}
