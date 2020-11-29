@@ -191,6 +191,7 @@ func TestDefaultGetActionIgnore(t *testing.T) {
 	q := req.URL.Query()
 	q.Add("id", `1`)
 	q.Add("name_ignore", ``)
+	q.Add("name_order", ``)
 	req.URL.RawQuery = q.Encode()
 
 	r.ServeHTTP(w, req)
