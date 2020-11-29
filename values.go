@@ -265,7 +265,7 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 					queryParam.Gte[jsonKey] = toGenericArray(v)
 				}
 				key = fmt.Sprintf("%s_order", jsonKey)
-				if v, ok := valueOfMap(params, key); ok {
+				if _, ok := valueOfMap(params, key); ok {
 					queryParam.Order[jsonKey] = []interface{}{}
 				}
 
