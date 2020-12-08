@@ -17,7 +17,10 @@ func TestDefaultPatchAction(t *testing.T) {
 		// `{"name":"test-patch-dog-1"}`,
 		// `{"name":"test-patch-dog-2","foods":[{"id":1},{"id":2}]}`,
 		// `{"name":"test-patch-dog-3","toys":[{"name":"new-toy-1"},{"name":"new-toy-1"}]}`,
-		`{"name":"test-patch-dog-3","owner":[{"id":"1"}}`,
+
+		// `{"name":"test-patch-dog-3","owner":[{"id":"1"}}`,
+		// `{"birty":"2020-12-08T05:52:29.069+08:00"}`,
+		`{"birth":"2020-12-08T05:52:29.069+08:00"}`,
 	}
 
 	for _, jsonParam := range jsonParams {

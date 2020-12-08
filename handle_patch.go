@@ -1,7 +1,9 @@
 package lazy
 
 import (
+	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -54,6 +56,30 @@ func DefaultPatchAction(c *gin.Context, actionConfig *Action, payload interface{
 		return nil, err
 	}
 	delete(newValue, "id")
+
+	// vvv := newValue["birth"]
+	// logrus.Infof("%#v", vvv)
+	// logrus.Panicf("%+v", newValue)
+
+	m, err := schema.Parse(config.Model, schemaStore, schema.NamingStrategy{})
+	if err != nil {
+		logrus.WithError(err).Errorf("can't parse %+v", config.Model)
+	} else {
+		for k, v := range newValue {
+			if f, ok := m.FieldsByDBName[k]; ok {
+				switch f.StructField.Type.Kind() {
+				case reflect.TypeOf(time.Time{}).Kind(), reflect.TypeOf(&time.Time{}).Kind():
+					str := v.(string)
+					if t, err := time.Parse(time.RFC3339, str); err == nil {
+						newValue[k] = t
+					} else {
+						logrus.WithError(err).Error()
+					}
+					// logrus.Printf("%#v", newValue[k])
+				}
+			}
+		}
+	}
 
 	err = config.DB.Model(config.Model).Updates(newValue).Error
 	if err != nil {

@@ -41,17 +41,18 @@ type Owner struct {
 
 // Dog has many toys
 type Dog struct {
-	ID        uint      `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time `json:"created_at" mapstructure:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" mapstructure:"updated_at"`
-	Name      string    `gorm:"unique" json:"name"`
-	OwnerID   int       `json:"owner_id" mapstructure:"owner_id"`
-	Owner     Owner     `json:"owner"`
-	Toys      []Toy     `json:"toys"`
-	Foods     []Food    `json:"foods" gorm:"many2many:dog_foods"`
-	BreedID   uint      `json:"bread_id"`
-	Good      bool      `json:"good"`
-	Bad       bool      `json:"bad"`
+	ID        uint       `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time  `json:"created_at" mapstructure:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at" mapstructure:"updated_at"`
+	Name      string     `gorm:"unique" json:"name"`
+	OwnerID   int        `json:"owner_id" mapstructure:"owner_id"`
+	Owner     Owner      `json:"owner"`
+	Toys      []Toy      `json:"toys"`
+	Foods     []Food     `json:"foods" gorm:"many2many:dog_foods"`
+	BreedID   uint       `json:"bread_id"`
+	Good      bool       `json:"good"`
+	Bad       bool       `json:"bad"`
+	Birth     *time.Time `json:"birth"`
 }
 
 // Profile belongs to a dog
