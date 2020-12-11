@@ -93,6 +93,14 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 			for _, vIds := range ids {
 				qParams.Eq["id"] = append(qParams.Eq["id"], vIds)
 			}
+		} else {
+			count := int64(len(mapResults))
+			modelResults := make([]interface{}, 0)
+			logrus.WithField("count", count).Trace()
+			c.Set(keyCount, count)
+			c.Set(keyData, modelResults)
+			c.Set(keyResults, map[string]interface{}{"count": count, "items": modelResults})
+			return
 		}
 	}
 

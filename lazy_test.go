@@ -47,6 +47,8 @@ type Dog struct {
 	Name      string     `gorm:"unique" json:"name"`
 	OwnerID   int        `json:"owner_id" mapstructure:"owner_id"`
 	Owner     Owner      `json:"owner"`
+	FosterID  int        `json:"foster_id" mapstructure:"foster_id"`
+	Foster    Owner      `json:"foster"`
 	Toys      []Toy      `json:"toys"`
 	Foods     []Food     `json:"foods" gorm:"many2many:dog_foods"`
 	BreedID   uint       `json:"bread_id"`
@@ -165,7 +167,7 @@ func initTestDB() {
 	diamond := &Food{Brand: `Diamond`}
 	gormDB.Create(diamond)
 
-	dog := &Dog{Name: "Charlie", OwnerID: 1, BreedID: 1, Good: true}
+	dog := &Dog{Name: "Charlie", OwnerID: 1, BreedID: 1, Good: true, FosterID: 2}
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree)
 	// gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
