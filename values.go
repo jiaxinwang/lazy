@@ -187,6 +187,7 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 				}
 			}
 		} else {
+			t := time.Now()
 			switch vField.FieldType.Kind() {
 			case reflect.String:
 				key := fmt.Sprintf("%s", jsonKey)
@@ -219,8 +220,33 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 						queryParam.Eq[jsonKey] = []interface{}{false}
 					}
 				}
+			case reflect.Ptr:
+				// FIXME: ptr
+				switch vField.FieldType.Elem() {
+				case reflect.TypeOf(t), reflect.TypeOf(&t):
+					// TODO: time format
+					key := fmt.Sprintf("%s", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Eq[jsonKey] = toGenericArray(v)
+					}
+					key = fmt.Sprintf("%s_lt", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Lt[jsonKey] = toGenericArray(v)
+					}
+					key = fmt.Sprintf("%s_gt", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Gt[jsonKey] = toGenericArray(v)
+					}
+					key = fmt.Sprintf("%s_lte", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Lte[jsonKey] = toGenericArray(v)
+					}
+					key = fmt.Sprintf("%s_gte", jsonKey)
+					if v, ok := valueOfMap(params, key); ok {
+						queryParam.Gte[jsonKey] = toGenericArray(v)
+					}
+				}
 			case reflect.Struct:
-				t := time.Now()
 				switch vField.FieldType {
 				case reflect.TypeOf(t), reflect.TypeOf(&t):
 					// TODO: time format

@@ -80,6 +80,32 @@ func TestDefaultGetActionParams(t *testing.T) {
 
 }
 
+func TestDefaultGetActionTimeParams(t *testing.T) {
+	initTestDB()
+	r := defaultDogRouter(router())
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/dogs", nil)
+
+	q := req.URL.Query()
+	q.Add("birth_gte", `2015-01-01T00:00:00Z00:00`)
+	req.URL.RawQuery = q.Encode()
+
+	var dog1 Dog
+	gormDB.Where("name = Charlie").Preload("Toys").Preload("Foods").Preload("Owner").Find(&dog1)
+	logrus.Printf("%#v", dog1)
+
+	r.ServeHTTP(w, req)
+	response := Response{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, 200, w.Code)
+	assert.NoError(t, err)
+	var ret Ret
+	MapStruct(response.Data.(map[string]interface{}), &ret)
+	logrus.WithField("ret", fmt.Sprintf("%+v", ret)).Info()
+
+}
+
 func TestDefaultGetActionParamsHasMany(t *testing.T) {
 	initTestDB()
 	r := defaultDogRouter(router())

@@ -167,7 +167,9 @@ func initTestDB() {
 	diamond := &Food{Brand: `Diamond`}
 	gormDB.Create(diamond)
 
-	dog := &Dog{Name: "Charlie", OwnerID: 1, BreedID: 1, Good: true, FosterID: 2}
+	t, _ := time.Parse("20060102", "20150105")
+
+	dog := &Dog{Name: "Charlie", OwnerID: 1, BreedID: 1, Good: true, FosterID: 2, Birth: &t}
 	gormDB.Create(dog)
 	gormDB.Model(dog).Association("Foods").Append(pedigree)
 	// gormDB.Model(dog).Association("Toys").Append(Toy{Name: `Tug`, DogID: dog.ID}, Toy{Name: `Toss`, DogID: dog.ID})
