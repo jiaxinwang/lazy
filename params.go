@@ -110,10 +110,10 @@ func ContentParams(c *gin.Context) (union, query, body map[string]interface{}) {
 
 // ModifyContentParamWithJSONPath ...
 func ModifyContentParamWithJSONPath(c *gin.Context, jsonPath string, value interface{}) error {
-	_, _, body := ContentParams(c)
+	_, query, _ := ContentParams(c)
 	var srcStr string
 	var err error
-	if srcStr, err = json.MarshalToString(body); err != nil {
+	if srcStr, err = json.MarshalToString(query); err != nil {
 		logrus.WithError(err).Error()
 		return err
 	}
