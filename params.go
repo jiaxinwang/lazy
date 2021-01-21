@@ -126,7 +126,7 @@ func ModifyContentParamWithJSONPath(c *gin.Context, jsonPath string, value inter
 		logrus.WithError(err).Error()
 		return err
 	}
-	c.Set(KeyParamsUnion, m)
+	c.Set(KeyParams, m)
 	return nil
 }
 
