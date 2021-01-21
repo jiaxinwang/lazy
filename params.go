@@ -109,7 +109,7 @@ func ContentParams(c *gin.Context) (union, query, body map[string]interface{}) {
 }
 
 // ModifyContentParamWithJSONPath ...
-func ModifyContentParamWithJSONPath(c *gin.Context, jsonPath string, value interface{}) error {
+func ModifyContentParamWithJSONPath(c *gin.Context, jsonPath string, value []string) error {
 	_, query, _ := ContentParams(c)
 	var srcStr string
 	var err error
