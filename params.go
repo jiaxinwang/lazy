@@ -108,6 +108,24 @@ func ContentParams(c *gin.Context) (union, query, body map[string]interface{}) {
 	return
 }
 
+// ModifyContentParamWithJSONPath ...
+func ModifyContentParamWithJSONPath(c *gin.Context, jsonPath string, value interface{}) {
+	_, _, body := ContentParams(c)
+	var srcStr string
+	var err error
+	if srcStr, err = json.MarshalToString(body); err != nil {
+		return
+	}
+	if srcStr, err = sjson.Set(srcStr, jsonPath, value); err != nil {
+		return
+	}
+	m := make(map[string]interface{})
+	if err := json.UnmarshalFromString(srcStr, &m); err != nil {
+		return
+	}
+	c.Set(KeyParamsUnion, m)
+}
+
 // ContentParamWithJSONPath ...
 func ContentParamWithJSONPath(c *gin.Context, jsonPath string) (param interface{}) {
 	_, _, body := ContentParams(c)
