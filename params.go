@@ -92,18 +92,10 @@ func ContentParams(c *gin.Context) (union, query, body map[string]interface{}) {
 		union = make(map[string]interface{})
 	}
 	if v, ok := c.Get(KeyParams); ok {
-		p, ok2 := v.(map[string][]string)
-		if ok2 {
-			query = make(map[string]interface{})
-			for kk, vv := range p {
-				query[kk] = vv
-			}
-		} else if p3, ok3 := v.(map[string]interface{}); ok3 {
-			query = make(map[string]interface{})
-			for kk, vv := range p3 {
-				query[kk] = vv
-			}
-
+		p := v.(map[string][]string)
+		query = make(map[string]interface{})
+		for kk, vv := range p {
+			query[kk] = vv
 		}
 	} else {
 		query = make(map[string]interface{})
