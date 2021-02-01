@@ -2,6 +2,7 @@ package lazy
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/antchfx/jsonquery"
@@ -106,7 +107,11 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 
 	for k, v := range qParams.Eq {
 		if len(v) == 1 {
-			tx = tx.Where(fmt.Sprintf("%s = ?", k), v[0])
+			if reflect.TypeOf(v[0]).Kind() == reflect.Slice {
+				tx = tx.Where(fmt.Sprintf("%s IN ?", k), v[0])
+			} else {
+				tx = tx.Where(fmt.Sprintf("%s = ?", k), v[0])
+			}
 		} else {
 			tx = tx.Where(fmt.Sprintf("%s IN ?", k), v)
 		}
