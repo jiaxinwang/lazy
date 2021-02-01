@@ -4,14 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
-
-	"github.com/google/go-cmp/cmp"
-)
-
-var (
-	json jsoniter.API
 )
 
 func init() {
@@ -30,27 +23,27 @@ func Test_separateParams(t *testing.T) {
 	}{
 		{
 			"case-1",
-			args{whole: map[string][]string{"a": []string{`v1`, `v2`}}, keys: []string{`a`}},
-			map[string][]string{"a": []string{`v1`, `v2`}},
+			args{whole: map[string][]string{"a": {`v1`, `v2`}}, keys: []string{`a`}},
+			map[string][]string{"a": {`v1`, `v2`}},
 			map[string][]string{},
 		},
 		{
 			"case-2",
-			args{whole: map[string][]string{"a": []string{`v1`, `v2`}}, keys: []string{}},
+			args{whole: map[string][]string{"a": {`v1`, `v2`}}, keys: []string{}},
 			map[string][]string{},
-			map[string][]string{"a": []string{`v1`, `v2`}},
+			map[string][]string{"a": {`v1`, `v2`}},
 		},
 		{
 			"case-3",
-			args{whole: map[string][]string{"a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}}, keys: []string{`a`}},
-			map[string][]string{"a": []string{`v1`, `v2`}},
-			map[string][]string{"b": []string{`v3`, `v4`}},
+			args{whole: map[string][]string{"a": {`v1`, `v2`}, "b": {`v3`, `v4`}}, keys: []string{`a`}},
+			map[string][]string{"a": {`v1`, `v2`}},
+			map[string][]string{"b": {`v3`, `v4`}},
 		},
 		{
 			"case-4",
-			args{whole: map[string][]string{"a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}}, keys: []string{`c`}},
+			args{whole: map[string][]string{"a": {`v1`, `v2`}, "b": {`v3`, `v4`}}, keys: []string{`c`}},
 			map[string][]string{},
-			map[string][]string{"a": []string{`v1`, `v2`}, "b": []string{`v3`, `v4`}},
+			map[string][]string{"a": {`v1`, `v2`}, "b": {`v3`, `v4`}},
 		},
 	}
 	for _, tt := range tests {
