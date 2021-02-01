@@ -97,9 +97,9 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 			count := int64(len(mapResults))
 			modelResults := make([]interface{}, 0)
 			logrus.WithField("count", count).Trace()
-			c.Set(keyCount, count)
-			c.Set(keyData, modelResults)
-			c.Set(keyResults, map[string]interface{}{"count": count, "items": modelResults})
+			c.Set(KeyCount, count)
+			c.Set(KeyData, modelResults)
+			c.Set(KeyResults, map[string]interface{}{"count": count, "items": modelResults})
 			return
 		}
 	}
@@ -262,9 +262,9 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 	}
 
 	logrus.WithField("count", count).Trace()
-	c.Set(keyCount, count)
-	c.Set(keyData, modelResults)
-	c.Set(keyResults, map[string]interface{}{"count": count, "items": modelResults})
+	c.Set(KeyCount, count)
+	c.Set(KeyData, modelResults)
+	c.Set(KeyResults, map[string]interface{}{"count": count, "items": modelResults})
 	return
 }
 

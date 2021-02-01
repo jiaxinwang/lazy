@@ -19,9 +19,12 @@ var (
 	KeyConfig = `_lazy_configuration`
 	// KeyErrorMessage ...
 	KeyErrorMessage = `error_msg`
-	keyResults      = `_lazy_results`
-	keyCount        = `_lazy_count`
-	keyData         = `_lazy_data`
+	// KeyResults ...
+	KeyResults = `_lazy_results`
+	// KeyCount ...
+	KeyCount = `_lazy_count`
+	// KeyData ...
+	KeyData = `_lazy_data`
 )
 
 // MiddlewareParams ...
@@ -64,8 +67,8 @@ func MiddlewareParams(c *gin.Context) {
 // MiddlewareDefaultResult ...
 func MiddlewareDefaultResult(c *gin.Context) {
 	defer func() {
-		if v, exist := c.Get(keyResults); exist {
-			c.Set(keyData, map[string]interface{}{"data": v})
+		if v, exist := c.Get(KeyResults); exist {
+			c.Set(KeyData, map[string]interface{}{"data": v})
 		}
 	}()
 	c.Next()
@@ -103,7 +106,7 @@ func MiddlewareResponse(c *gin.Context) {
 			ret["error_no"] = 400
 			ret["error_msg"] = v.(string)
 		} else {
-			if v, ok := c.Get(keyData); ok {
+			if v, ok := c.Get(KeyData); ok {
 				ret = v.(map[string]interface{})
 			}
 			ret["error_no"] = 0

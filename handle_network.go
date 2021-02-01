@@ -61,7 +61,7 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *Action, payload interfac
 		}
 	}
 
-	c.Set(keyResults, ret)
-	logrus.WithField(keyResults, logger.Pretty(ret)).Trace()
+	c.Set(KeyResults, ret)
+	logrus.WithField(KeyResults, logger.Pretty(ret)).Trace()
 	return []map[string]interface{}{ret}, nil
 }
