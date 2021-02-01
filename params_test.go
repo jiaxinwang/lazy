@@ -4,10 +4,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
-	"gitlab.aibee.cn/lgong/CarServer/common/json"
 
 	"github.com/google/go-cmp/cmp"
+)
+
+var (
+	json jsoniter.API
 )
 
 func init() {

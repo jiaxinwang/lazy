@@ -18,9 +18,9 @@ func TestDefaultGetAction(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/dogs", nil)
 
 	q := req.URL.Query()
-	// q.Add("id", `1`)
-	// q.Add("id", `2`)
 	q.Add("id", `1`)
+	q.Add("id", `2`)
+	// q.Add("id", `1`)
 	req.URL.RawQuery = q.Encode()
 
 	var dog1 Dog
