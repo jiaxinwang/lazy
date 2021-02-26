@@ -41,6 +41,7 @@ func DefaultNetworkAction(c *gin.Context, actionConfig *Action, payload interfac
 			c.Set(KeyErrorMessage, err.Error())
 			return
 		}
+		defer resp.Close()
 	case http.MethodPut:
 	case http.MethodPatch:
 	case http.MethodDelete:
