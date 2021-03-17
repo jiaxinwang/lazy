@@ -39,6 +39,8 @@ func TestDefaultPostAction(t *testing.T) {
 		assert.Equal(t, 200, w.Code)
 		assert.NoError(t, err)
 
+		// logrus.Debug(w.Body.String())
+
 		dog := Dog{}
 		json.Unmarshal([]byte(jsonParam), &dog)
 		if dog.Foods == nil {

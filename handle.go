@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/antchfx/jsonquery"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/levigross/grequests"
 	"gorm.io/gorm/schema"
 
@@ -34,10 +35,16 @@ func DefaultPostAction(c *gin.Context, actionConfig *Action, payload interface{}
 	}
 
 	err = createModel(config.DB, config.Model)
-	// data = make([]map[string]interface{}, 1)
-	// data[0] = make(map[string]interface{})
-	// data[0][keyData] = clone(config.Model)
-	// c.Set(keyResults, data)
+	data = make([]map[string]interface{}, 1)
+	data[0] = make(map[string]interface{})
+	if str, err := jsoniter.MarshalToString(config.Model); err != nil {
+		return nil, err
+	} else {
+		if err := jsoniter.UnmarshalFromString(str, &data[0]); err != nil {
+			return nil, err
+		}
+	}
+	c.Set(KeyResults, data)
 	return data, err
 }
 
