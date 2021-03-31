@@ -181,10 +181,10 @@ func DefaultGetAction(c *gin.Context, actionConfig *Action, payload interface{})
 				// logrus.Print(v)
 			}
 		}
-		if err := MapStruct(v, config.Model); err != nil {
+		tmp := clone(config.Model)
+		if err := MapStruct(v, tmp); err != nil {
 			return nil, err
 		}
-		tmp := clone(config.Model)
 		modelResults[k] = tmp
 	}
 	for _, vBelongToRelation := range relations.BelongsTo {
