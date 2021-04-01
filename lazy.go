@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/json-iterator/go/extra"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,6 +24,8 @@ func init() {
 	schemaStore = &sync.Map{}
 	cacheStore = &sync.Map{}
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
+	extra.RegisterFuzzyDecoders()
+	extra.SetNamingStrategy(extra.LowerCaseWithUnderscores)
 	logrus.SetLevel(logrus.TraceLevel)
 	gob.Register(map[string]interface{}{})
 }
