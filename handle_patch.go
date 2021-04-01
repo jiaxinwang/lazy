@@ -3,6 +3,7 @@ package lazy
 import (
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -40,8 +41,14 @@ func DefaultPatchAction(c *gin.Context, actionConfig *Action, payload interface{
 	rels, err := relationships(config.DB, config.Model)
 	for _, v := range rels.Relations {
 		jsonTag := v.Field.StructField.Tag.Get("json")
-		bodyParamsJSONStr, _ = sjson.Delete(bodyParamsJSONStr, jsonTag)
-
+		if !strings.EqualFold(jsonTag, "") {
+			var deleteErr error
+			bodyParamsJSONStr, deleteErr = sjson.Delete(bodyParamsJSONStr, jsonTag)
+			if deleteErr != nil {
+				logrus.WithError(err).Error()
+				return nil, err
+			}
+		}
 	}
 
 	err = json.UnmarshalFromString(bodyParamsJSONStr, &config.Model)
