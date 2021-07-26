@@ -270,6 +270,14 @@ func splitQueryParams(model interface{}, params map[string][]string) (queryParam
 					if v, ok := valueOfMap(params, key); ok {
 						queryParam.Gte[jsonKey] = toGenericArray(v)
 					}
+					key = fmt.Sprintf("%s_order", jsonKey)
+					if _, ok := valueOfMap(params, key); ok {
+						queryParam.Order[jsonKey] = []interface{}{}
+					}
+					key = fmt.Sprintf("%s_order_desc", jsonKey)
+					if _, ok := valueOfMap(params, key); ok {
+						queryParam.OrderDesc[jsonKey] = []interface{}{}
+					}
 				}
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				fallthrough
