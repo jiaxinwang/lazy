@@ -3,11 +3,8 @@ module github.com/jiaxinwang/lazy
 go 1.14
 
 require (
-	github.com/Masterminds/squirrel v1.4.0 // indirect
-	github.com/adam-hanna/arrayOperations v0.2.6 // indirect
 	github.com/antchfx/jsonquery v1.1.4
 	github.com/antonfisher/nested-logrus-formatter v1.3.0
-	github.com/bregydoc/gtranslate v0.0.0-20200913051839-1bd07f6c1fc5 // indirect
 	github.com/gin-gonic/gin v1.7.4
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
@@ -21,11 +18,9 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/robertkrimen/otto v0.0.0-20200922221731-ef014fd054ac // indirect
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.8.1
-	github.com/tidwall/pretty v1.2.0 // indirect
+	github.com/tidwall/gjson v1.9.3
 	github.com/tidwall/sjson v1.1.2
 	github.com/ugorji/go v1.2.6 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
